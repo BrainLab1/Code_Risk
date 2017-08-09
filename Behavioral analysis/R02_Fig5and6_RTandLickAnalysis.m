@@ -9,7 +9,7 @@ dbstop if error
 main_folder          = 'Z:\'; 
 data_folder          = 'data\'; % 
 original_data_folder = 'Risk\Original Data_Extracted\';
-save_dir             = 'X:\Report 2\Bahareh\BehaviorData\';
+save_dir             = 'Z:\data\Risk\Behavior\';
 
 colorCode = [  204 204 255  % F3
                255 153 153  % F6
@@ -27,7 +27,7 @@ lickTimeRelativeEvent = 'reward';
 monkeyName = 'Mojo';  % 'Moj' or 'Mac'
 groupingCriteria       = 'type' ; % this parameter shows based on what criteria trials are grouped.
 Fs = 1000;   % assume 1K sampling rate
-whichFigUWannaPlot = '6';  % '5' or '6'
+whichFigUWannaPlot = '5';  % '5' or '6'
 
 %% Read out list of all the files related to this session
 dataPath = [main_folder data_folder original_data_folder];
@@ -83,7 +83,7 @@ for ses = 1:numel(allFiles) % for each session
     save([save_dir allFiles(ses).name '(' alignEvent ')'], 'new_cfg', 'alignEvent', 'evetTimeInterval')
  end % ----------------------------------------------------------------------------------------------------------------------
 
-    load ([save_dir allFiles(ses).name '(cue)'])
+    load ([save_dir 'Bhv_' allFiles(ses).name])
  
     % group trials for 9 task conditions
     [output] = GroupTrials(new_cfg.event, groupingCriteria);
