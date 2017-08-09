@@ -8,7 +8,7 @@ dbstop if error
 main_folder          = 'Z:\'; 
 data_folder          = 'data\'; % 
 original_data_folder = 'Risk\Original Data_Extracted\';
-save_dir             = 'X:\Report 2\Bahareh\BehaviorData\';
+save_dir             = 'Z:\data\Risk\Behavior\';
 
 colorCode = [  204 204 255  % F3
                255 153 153  % F6
@@ -21,7 +21,7 @@ colorCode = [  204 204 255  % F3
                0  153 153]/255; % B9H   
            
 % % alignEvent = 'cue';           
-% evetTimeInterval = [-0.2, 1];
+evetTimeInterval = [-0.2, 1];
 alignEvent = 'cue';           
 % evetTimeInterval = [-0.55, 0.1];
 monkeyName = 'MacDuff';  % 'Moj' or 'Mac'
@@ -81,9 +81,7 @@ for ses = 1:numel(allFiles) % for each session
     save([save_dir allFiles(ses).name '(' alignEvent ')'], 'new_cfg', 'alignEvent', 'evetTimeInterval')
  end % ----------------------------------------------------------------------------------------------------------------------
 
-    load ([save_dir allFiles(ses).name '(cue)'])
-    alignEvent = 'reward';
-    evetTimeInterval = [-0.55, 0.1];
+    load ([save_dir 'Bhv_' allFiles(ses).name])
  
     % group trials for 18 task conditions
     [output] = GroupTrials(new_cfg.event, groupingCriteria);
