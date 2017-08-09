@@ -9,7 +9,7 @@ dbstop if error
 main_folder          = 'Z:\'; 
 data_folder          = 'data\'; % 
 original_data_folder = 'Risk\Original Data_Extracted\';
-save_dir             = 'X:\Report 2\Bahareh\';
+save_dir             = 'Z:\data\Risk\Behavior\';
 
 % Set the options
 groupingCriteria       = 'SaccadeLaterality' ; % this parameter shows based on what criteria trials are grouped.
@@ -20,7 +20,6 @@ allFiles = dir(dataPath);
 
 %%
 
-% % % % load matlab_fig3
 if 1
     
     
@@ -110,7 +109,7 @@ condPos = [{'1Moj'}   {'1Mac'};
 numRows = 2;
 numColumns = 2;
 binWidth = 0.1;
-% % % % xLimit = [min([zScoreMojRT(:,1);zScoreMacRT(:,1)]) , max([zScoreMojRT(:,1);zScoreMacRT(:,1)])] + [-1 1];
+xLimit = [min([zScoreMojRT(:,1);zScoreMacRT(:,1)]) , max([zScoreMojRT(:,1);zScoreMacRT(:,1)])] + [-1 1];
 yLimit = [0 510];
 xbins = xLimit(1) : binWidth : xLimit(2);
 plotBoxAspectRatio = [2, 1, 1];
