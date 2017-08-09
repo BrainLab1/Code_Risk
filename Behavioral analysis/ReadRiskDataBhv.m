@@ -82,8 +82,6 @@ for i = 1:length(cfg)
     
     try
         new_cfg = ft_definetrial(cfg(i));
-        new_cfg.event = new_cfg.trl;
-        new_cfg = rmfield(new_cfg,'trl');
         save ([main_folder data_folder save_dir 'Bhv_' cfg(i).session_dir '.mat'], 'new_cfg')
         clear data new_cfg
     catch err

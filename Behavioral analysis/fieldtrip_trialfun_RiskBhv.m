@@ -7,16 +7,27 @@
 % last update 25.07.2017: new fields added to the output structure: 'value' changed to 'ActualRewardValue'; 'RewardVariance' added 
 % created by Bahareh, 18.07.2017
 
-function [event] = fieldtrip_trialfun_RiskBhv(cfg)
+function [trl,event] = fieldtrip_trialfun_RiskBhv(cfg)
 % Finding trial and event information using behavioral data and header file
 % of the blackrock (ns2) file.
 
 % Created by Amin (nejatbakhsh.amin@gmail.com), modifyed by Bahareh for the Risk experiment
-%     hdr = ft_read_header(cfg.headerfile, 'headerformat', 'blackrock_nsx');
+    
+
+    hdr = ft_read_header(cfg.headerfile, 'headerformat', 'blackrock_nsx');
     bhv_dir = cfg.data_dir;
     
+    trl = [];
     event = [];
 
+    pretrig  = -round(cfg.trialdef.pre  * hdr.Fs);
+    posttrig =  round(cfg.trialdef.post * hdr.Fs);
+    
+    if isfield(cfg.trialdef,'interval')
+        interval_begin = round(cfg.trialdef.interval(1) * hdr.Fs);
+        interval_end = round(cfg.trialdef.interval(2) * hdr.Fs);
+    end
+    
     tmp_list = cfg.session_dir;
 
     bhv_name = dir([bhv_dir tmp_list '\*.bhv']);
@@ -33,7 +44,47 @@ function [event] = fieldtrip_trialfun_RiskBhv(cfg)
     end
 
     bhv_file        = bhv_read([bhv_dir tmp_list '\' bhv_name.name]);
+    onoff_file      = fileread([bhv_dir tmp_list '\' onoff_name.name]);
 
+    tmp_onoff       = regexp(onoff_file, '{(?<on>.*)}.*{(?<off>.*)}', 'names');
+    onoff           = {round(cellfun(@str2num, regexp(tmp_onoff.on, '[0-9]+', 'match'))/30), ...
+                       round(cellfun(@str2num, regexp(tmp_onoff.off, '[0-9]+', 'match'))/30)};
+
+    if length(onoff{1}) < length(bhv_file.ConditionNumber)
+        warning(['The number of elements in ONOFF file is lower than the number of trials in BHV file in folder ' [bhv_dir tmp_list]]);
+        return;
+    end
+    
+     %% Trials
+    timing_cue      = [];
+    timing_reward   = [];
+    
+
+    for j = 1: length(bhv_file.ConditionNumber)
+        cue         = bhv_file.CodeTimes{j}(bhv_file.CodeNumbers{j} == 19); if isempty(cue), cue = -Inf; end
+        start       = bhv_file.CodeTimes{j}(bhv_file.CodeNumbers{j} == 1); if isempty(start), start = -Inf; end
+        target_aq   = bhv_file.CodeTimes{j}(bhv_file.CodeNumbers{j} == 14); if isempty(target_aq), target_aq = -Inf; end
+        
+        timing_cue  = [timing_cue; cue - start];
+        timing_reward = [timing_reward; target_aq - start + 377] ;
+    end
+
+    if ~isfield(cfg.trialdef,'eventtype') || isempty(cfg.trialdef.eventtype)
+        new_trials  = [onoff{1}(1: length(bhv_file.ConditionNumber))' + pretrig, ...
+                      onoff{1}(1: length(bhv_file.ConditionNumber))' + posttrig, ...
+                      ones(length(bhv_file.ConditionNumber), 1) * (pretrig)];
+    elseif strcmp(cfg.trialdef.eventtype, 'cue')
+        new_trials  = [onoff{1}(1: length(bhv_file.ConditionNumber))' + timing_cue + interval_begin + pretrig, ...
+                      onoff{1}(1: length(bhv_file.ConditionNumber))' + timing_cue + interval_end + posttrig, ...
+                      ones(length(bhv_file.ConditionNumber), 1) * (interval_begin + pretrig)];
+    elseif strcmp(cfg.trialdef.eventtype, 'reward')
+        new_trials  = [onoff{1}(1: length(bhv_file.ConditionNumber))' + timing_reward + interval_begin + pretrig, ...
+                      onoff{1}(1: length(bhv_file.ConditionNumber))' + timing_reward + interval_end + posttrig, ...
+                      ones(length(bhv_file.ConditionNumber), 1) * (interval_begin + pretrig)];
+    end
+
+    trl = [trl; new_trials];
+    
     %% Pass actual event times/samples (not aligned) to the output
     actualEventTime = {};
     eventCodes = [9 1 2 6 19 20 21 14 22 100 18]';
@@ -132,4 +183,11 @@ function [event] = fieldtrip_trialfun_RiskBhv(cfg)
     
     event               = [event; new_events];
 
+%     indices             = find([bhv_file.TrialError]' == 0 & ...
+%                                [event.duration] > 0 & ...
+%                                [event.sample] > 0 & ...
+%                                [event.sample] + [event.duration] < hdr.nSamples);
+%     event               = event(indices);
+%     trl                 = trl(indices, :);
+    
 end
