@@ -1,24 +1,21 @@
 
+% last update 08.08.2017:by Saeed; all the information about alignment event are
+% removed and one new field named 'Photodiode' is added. three fields named
+% 'offset', 'sample' and 'duration' are removed as they are extra for behavioral data
+% analysis
 % last update 26.07.2017: new fields added to the output structure: 'EyeSignal', 'LickSignal', 'PupilSize', 'ActualEventTime'  
 % last update 25.07.2017: new fields added to the output structure: 'value' changed to 'ActualRewardValue'; 'RewardVariance' added 
 % created by Bahareh, 18.07.2017
 
-function [trl, event] = fieldtrip_trialfun_RiskBhv(cfg)
+function [event] = fieldtrip_trialfun_RiskBhv(cfg)
 % Finding trial and event information using behavioral data and header file
 % of the blackrock (ns2) file.
 
 % Created by Amin (nejatbakhsh.amin@gmail.com), modifyed by Bahareh for the Risk experiment
-    hdr = ft_read_header(cfg.headerfile, 'headerformat', 'blackrock_nsx');
+%     hdr = ft_read_header(cfg.headerfile, 'headerformat', 'blackrock_nsx');
     bhv_dir = cfg.data_dir;
     
-    trl = [];
     event = [];
-    
-    pretrig  = -round(cfg.trialdef.pre  * hdr.Fs);
-    posttrig =  round(cfg.trialdef.post * hdr.Fs);
-    
-    interval_begin = round(cfg.trialdef.interval(1) * hdr.Fs);
-    interval_end = round(cfg.trialdef.interval(2) * hdr.Fs);
 
     tmp_list = cfg.session_dir;
 
@@ -36,42 +33,6 @@ function [trl, event] = fieldtrip_trialfun_RiskBhv(cfg)
     end
 
     bhv_file        = bhv_read([bhv_dir tmp_list '\' bhv_name.name]);
-    onoff_file      = fileread([bhv_dir tmp_list '\' onoff_name.name]);
-
-    tmp_onoff       = regexp(onoff_file, '{(?<on>.*)}.*{(?<off>.*)}', 'names');
-    onoff           = {round(cellfun(@str2num, regexp(tmp_onoff.on, '[0-9]+', 'match'))/30), ...
-                       round(cellfun(@str2num, regexp(tmp_onoff.off, '[0-9]+', 'match'))/30)};
-
-    if length(onoff{1}) < length(bhv_file.ConditionNumber)
-        warning(['The number of elements in ONOFF file is lower than the number of trials in BHV file in folder ' [bhv_dir tmp_list]]);
-        return;
-    end
-    
-    %% Trials and event time alignment
-    timing_cue      = [];
-    timing_reward   = [];
-
-    for j = 1: length(bhv_file.ConditionNumber)  % for each trial
-        cue         = bhv_file.CodeTimes{j}(bhv_file.CodeNumbers{j} == 19); if isempty(cue), cue = -Inf; end % 19 is the event code for Cue onset
-        start       = bhv_file.CodeTimes{j}(bhv_file.CodeNumbers{j} == 1); if isempty(start), start = -Inf; end % 1 is the event code for trial start
-        target_aq   = bhv_file.CodeTimes{j}(bhv_file.CodeNumbers{j} == 14); if isempty(target_aq), target_aq = -Inf; end % 14 is the event code for target aquire
-        
-        timing_cue  = [timing_cue; cue - start];
-        timing_reward = [timing_reward; target_aq - start + 377] ;  % 377 ms after the target aquired time, reward is delivered
-    end
-    clear j
-
-    if strcmp(cfg.trialdef.eventtype, 'cue')
-        new_trials  = [onoff{1}(1: length(bhv_file.ConditionNumber))' + timing_cue + interval_begin + pretrig, ...
-                      onoff{1}(1: length(bhv_file.ConditionNumber))' + timing_cue + interval_end + posttrig, ...
-                      ones(length(bhv_file.ConditionNumber), 1) * (interval_begin + pretrig)];
-    elseif strcmp(cfg.trialdef.eventtype, 'reward')
-        new_trials  = [onoff{1}(1: length(bhv_file.ConditionNumber))' + timing_reward + interval_begin + pretrig, ...
-                      onoff{1}(1: length(bhv_file.ConditionNumber))' + timing_reward + interval_end + posttrig, ...
-                      ones(length(bhv_file.ConditionNumber), 1) * (interval_begin + pretrig)];
-    end
-
-    trl = [trl; new_trials];
 
     %% Pass actual event times/samples (not aligned) to the output
     actualEventTime = {};
@@ -102,6 +63,7 @@ function [trl, event] = fieldtrip_trialfun_RiskBhv(cfg)
         lickSignal{tr,1} = bhv_file.AnalogData{tr}.General.Gen1;
         pupilSize{tr,1}  = struct('Height', bhv_file.AnalogData{tr}.General.Gen2, ...
                                   'Width', bhv_file.AnalogData{tr}.General.Gen3);
+        PhotoDiode{tr,1} = bhv_file.AnalogData{tr}.PhotoDiode;             
     end
     
     %% Extract useful info from the .bhv file and pass it to output
@@ -109,17 +71,10 @@ function [trl, event] = fieldtrip_trialfun_RiskBhv(cfg)
     condition_names     = reshape({condition_structs.Stim2}, [length(condition_structs) 1]);
     conditions          = condition_names(bhv_file.ConditionNumber);  % task condition for each trial
 
-    reward_structs      = [bhv_file.RewardRecord];
-% % % %     rewards             = num2cell(round(([reward_structs.RewardOffTime]' - [reward_structs.RewardOnTime]')/100)/4);
-    
+    reward_structs      = [bhv_file.RewardRecord];    
     c                   = squeeze(struct2cell(reward_structs))' ;  % size: cell{numTrials , 2}
     rewards             = cellfun(@(x,y) sum(y-x), c(:,1), c(:,2), 'UniformOutput', 0);
     clear c
-    
-% % % %     expected_rewards    = cellfun(@(x) str2double(x(2:end-1))/100, conditions);
-% % % %     expected_rewards(abs(expected_rewards - 0.5200) < eps) = 0.25*0.5;
-% % % %     expected_rewards(abs(expected_rewards - 0.5700) < eps) = 0.75*0.5;
-% % % %     expected_rewards    = num2cell(expected_rewards);
     
     % find the expected reward (mean reward) for each task condition using the task conditionname! 
     % use bhv_file.TaskObject(bhv_file.ConditionNumber, 3) which looks like 'pic(F3,8.000,0.000...'
@@ -163,30 +118,18 @@ function [trl, event] = fieldtrip_trialfun_RiskBhv(cfg)
         trIdx = trIdx+1;
     end
     clear trIdx
-    
-    durations           = num2cell(new_trials(:, 2) - new_trials(:, 1)); 
-    starts              = num2cell(new_trials(:, 1));
-    offsets             = num2cell(new_trials(:, 3));
+
     reawardTime         = squeeze(struct2cell(reward_structs))';
     reaction_time       = mat2cell(bhv_file.ReactionTime',ones(size(bhv_file.ReactionTime',1),1));
     trial_error_code    = mat2cell(bhv_file.TrialError,ones(size(bhv_file.TrialError,1),1)); 
     
-    new_events          = struct('type', conditions, 'ActualRewardValue', rewards, ...
-                            'duration', durations, 'sample', starts, ...
-                            'offset', offsets, 'expected_reward', expected_rewards, 'RewardVariance', rewardVariance, ...
+    new_events          = struct('type', conditions, 'TotalRewardTime', rewards, ...
+                            'expected_reward', expected_rewards, 'RewardVariance', rewardVariance, ...
                             'RewardOnTime',  reawardTime(:,1), 'RewardOffTime',  reawardTime(:,2), 'ReactionTime',  reaction_time, 'ActualEventTime', actualEventTime,...
                             'cue_pos', cue_positions, 'target_pos', target_positions, ...
                             'pre_good', pre_goods, 'TrialErrorCode', trial_error_code, ... 
-                            'EyeSignal', eyeSignal, 'LickSignal', lickSignal, 'PupilSize', pupilSize);
-    
+                            'EyeSignal', eyeSignal, 'LickSignal', lickSignal, 'PupilSize', pupilSize, 'PhotoDiode', PhotoDiode);
     
     event               = [event; new_events];
 
-
-% % % %     indices             = find(... discard the success status of the trials  
-% % % %                                [event.duration] > 0 & ...
-% % % %                                [event.sample] > 0 & ...
-% % % %                                [event.sample] + [event.duration] < hdr.nSamples);
-% % % %     event               = event(indices);
-% % % %     trl                 = trl(indices, :);
 end

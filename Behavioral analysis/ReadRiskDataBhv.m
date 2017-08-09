@@ -4,10 +4,13 @@
 % trials. you need to access the original .bhv file. this script calls
 % 'fieldtrip_trialfun_RiskBhv.m'. pay attention to the commented lines at
 % the very end of the 'fieldtrip_trialfun_RiskBhv.m'
+% last update: 08.08.2017; by Saeed;as this function is for extraction of
+% behavioral data, information about 'Cue' or 'Reward' alignment are
+% removed
 
 
-clear all;
-close all;
+clear
+close all
 clc;
 dbstop if error
 
@@ -19,9 +22,6 @@ toolbox_folder      = 'toolbox\';
 
 data_dir            = 'Risk\Original Data_Extracted\';
 save_dir            = 'Risk\Behavior\';
-
-cue_interval        = [-0.3, 0.9]; % zero is cue onset
-reward_interval     = [-0.6, 0.6]; % zero is reward onset
 
 tmp_folder_list     = dir([main_folder data_folder data_dir]);
 % % % % load tmp_folder_list
@@ -59,15 +59,7 @@ for i = 1:numel(tmp_folder_list) % for each session
         tmp_cfg.headerfile  = filepath;
         tmp_cfg.dataset     = filepath;
         tmp_cfg.session_dir = session_dir;
-        
-        %% Config for aligning on cue
-        tmp_cfg.trialdef.eventtype  = 'cue';
-        tmp_cfg.trialdef.interval   = cue_interval;
-        cfg = [cfg; tmp_cfg];
-        
-        %% Config for aligning on reward
-        tmp_cfg.trialdef.eventtype  = 'reward';
-        tmp_cfg.trialdef.interval   = reward_interval;
+
         cfg = [cfg; tmp_cfg];
 
     end
@@ -84,22 +76,15 @@ end
 % parfor i = 1: length(cfg)
 for i = 1:length(cfg)
     % if data is already preprocessed, continue
-    if exist([main_folder data_folder 'Preprocessed - new\' 'Data_' cfg(i).session_dir ' (' cfg(i).trialdef.eventtype ').mat'], 'file')
+    if exist([main_folder data_folder 'Preprocessed - new\' 'Data_' cfg(i).session_dir '.mat'], 'file')
         continue;
     end
     
-    % add the code directory to the MATLAB search path
-    addpath([main_folder code_folder]);
-    
-% % % %     addpath([main_folder toolbox_folder 'fieldtrip-20160904']); ft_defaults;
-% % % %     addpath([main_folder toolbox_folder 'NPMK']); installNPMK;
-% % % %     addpath([main_folder toolbox_folder 'MonkeyLogic']);
-    
-    
     try
         new_cfg = ft_definetrial(cfg(i));
-% % % %         data = fieldtrip_preproc_session([main_folder data_folder], new_cfg);
-        save ([main_folder data_folder save_dir 'Bhv_' cfg(i).session_dir ' (' cfg(i).trialdef.eventtype ').mat'], 'new_cfg')
+        new_cfg.event = new_cfg.trl;
+        new_cfg = rmfield(new_cfg,'trl');
+        save ([main_folder data_folder save_dir 'Bhv_' cfg(i).session_dir '.mat'], 'new_cfg')
         clear data new_cfg
     catch err
         warning([err.message ' in session: ' cfg(i).session_dir]);
