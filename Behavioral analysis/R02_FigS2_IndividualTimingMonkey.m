@@ -9,7 +9,7 @@ dbstop if error
 main_folder          = 'Z:\'; 
 data_folder          = 'data\'; % 
 original_data_folder = 'Risk\Original Data_Extracted\';
-save_dir             = 'X:\Report 2\Bahareh\BehaviorData\';
+save_dir             = 'Z:\data\Risk\Behavior\';
 
 %% Read out list of all the files related to this session
 dataPath = [main_folder data_folder original_data_folder];
@@ -71,7 +71,7 @@ for ses = 1:numel(allFiles) % for each session
     save([save_dir allFiles(ses).name '(' alignEvent ')'], 'new_cfg', 'alignEvent', 'evetTimeInterval')
  end % ----------------------------------------------------------------------------------------------------------------------
 
-    load ([save_dir allFiles(ses).name '(cue)'])
+    load ([save_dir 'Bhv_' allFiles(ses).name])
     
     % convert the structure arry to a table
     eventTable = struct2table(new_cfg.event);
