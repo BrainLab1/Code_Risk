@@ -145,7 +145,7 @@ binWidth = 5; % bin width in ms
 
 figure('Name', 'Inter-event timing')
 ev = 2;
-while ev <= length(evtNames)-1  % exclude TrialGateOn and TrialGateOff
+while ev <= length(evtNames)-2  % exclude TrialGateOn and TrialGateOff
     subplot(numRows, numColumns, ev-1), hold on, box on
     title([evtNames{ev} ' - ' evtNames{ev-1}])
     xlabel('Time in (ms)')
