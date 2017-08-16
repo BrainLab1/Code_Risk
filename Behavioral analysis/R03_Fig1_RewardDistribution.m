@@ -96,18 +96,18 @@ for rw = 1:numRows
         subplot( numRows, numColumns,plotIdx ), hold on, box on
         histogram(RewardTime{names_ind(rw,cl)})
         xlim([0,450]),ylim([0,850])
-        xlabel('Reward Duration')
+        xlabel('Total Reward Duration')
         switch plotIdx
             case 1
-                title('EV = 3'),ylabel('Var = 0')
+                title('Expected Reward = 3'),ylabel({'Variance = 0';'';'number of trials'})
             case 2
-                title('EV = 6')
+                title('Expected Reward = 6')
             case 3
-                title('EV = 9')
+                title('Expected Reward = 9')
             case 4
-                ylabel('Var = 1')
+                ylabel({'Variance = 1';'';'number of trials'})
             case 7
-                ylabel('Var = 4')
+                ylabel({'Variance = 4';'';'number of trials'})
         end
     end
 end

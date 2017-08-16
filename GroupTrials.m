@@ -1,5 +1,5 @@
 
-% last update: 12.08.2017 by Bahareh: new condition added for 'expected_reward & Congruence'
+% last update: 15.08.2017 by Saeed: new conditions added for 'PreTrialEV', 'PreTrialVAR' & 'PreTrialEV&VAR'
 % last update: 30.07.2017 by Bahareh: new conditions added for 'type & Congruence', 
 % last update: 25.07.2017 by Bahareh: new conditions added for '18 task conditions', 'SaccadeLaterality', 
 % last update: 24.07.2017 by Bahareh: new conditions added for 'CueTargetLaterality' and 'CueTargetCongruency' and 'Entropy'
@@ -186,7 +186,7 @@ switch grType
         
     case 'type & Congruence'
         eventTable = struct2table(event);
-        possibleVals = unique(eventTable.type); % this will gige you 9 cue types
+        possibleVals = unique(eventTable.type); % this will give you 9 cue types
         possibleVals = [ [possibleVals,  mat2cell(ones(length(possibleVals),1),ones(1,length(possibleVals)),1)];...
                          [possibleVals,  mat2cell(-ones(length(possibleVals),1),ones(1,length(possibleVals)),1)] ];
         output = [];
@@ -197,18 +197,103 @@ switch grType
                                      'GroupingType', grType)];
         end
         
-    case 'expected_reward & Congruence'
-        eventTable = struct2table(event);
-        possibleVals = unique(eventTable.expected_reward); % this will gige you 3 expected reward value
-        possibleVals = [ [possibleVals,  ones(length(possibleVals),1)];...
-                         [possibleVals, -ones(length(possibleVals),1)] ];
+    case 'PreTrialEV'
+        ind1 = [];
+        ind2 = [];
+        ind3 = [];
         output = [];
-        congeurncyIdx = eventTable.cue_pos .* eventTable.target_pos;
-        for i=1:size(possibleVals,1)
-            output = [output; struct('TrialIdx', find( (eventTable.expected_reward == possibleVals(i,1)) .* (congeurncyIdx == possibleVals(i,2)) ), ...
-                                     'Value', possibleVals(i,:), ...
-                                     'GroupingType', grType)];
+        eventTable = struct2table(event);        
+        for j = 2:size(eventTable,1)
+            if ~eventTable.TrialErrorCode(j)
+                if ~eventTable.TrialErrorCode(j-1)
+                    if eventTable.expected_reward(j-1) == eventTable.expected_reward(j)
+                        ind1 = [ind1;j];
+                    elseif eventTable.expected_reward(j-1) > eventTable.expected_reward(j)
+                        ind2 = [ind2;j];
+                    elseif eventTable.expected_reward(j-1) < eventTable.expected_reward(j)
+                        ind3 = [ind3;j];
+                    end
+                end
+            end
         end
+
+        output = [];
+        output = [output; struct('TrialIdx',ind1,'Value', ['EV1 = EV2'],'GroupingType', grType)];
+        output = [output; struct('TrialIdx',ind2,'Value', ['EV1 > EV2'],'GroupingType', grType)];
+        output = [output; struct('TrialIdx',ind3,'Value', ['EV1 < EV2'],'GroupingType', grType)];
+        
+    case 'PreTrialVAR'
+        ind1 = [];
+        ind2 = [];
+        ind3 = [];
+        output = [];
+        eventTable = struct2table(event);        
+        for j = 2:size(eventTable,1)
+            if ~eventTable.TrialErrorCode(j)
+                if ~eventTable.TrialErrorCode(j-1)
+                    if eventTable.RewardVariance(j-1) == eventTable.RewardVariance(j)
+                        ind1 = [ind1;j];
+                    elseif eventTable.RewardVariance(j-1) > eventTable.RewardVariance(j)
+                        ind2 = [ind2;j];
+                    elseif eventTable.RewardVariance(j-1) < eventTable.RewardVariance(j)
+                        ind3 = [ind3;j];
+                    end
+                end
+            end
+        end
+
+        output = [];
+        output = [output; struct('TrialIdx',ind1,'Value', ['VAR1 = VAR2'],'GroupingType', grType)];
+        output = [output; struct('TrialIdx',ind2,'Value', ['VAR1 > VAR2'],'GroupingType', grType)];
+        output = [output; struct('TrialIdx',ind3,'Value', ['VAR1 < VAR2'],'GroupingType', grType)];
+        
+        
+    case 'PreTrialEV&VAR'        
+        ind = cell(1,9);
+        output = [];
+        eventTable = struct2table(event);        
+        for j = 2:size(eventTable,1)
+            if ~eventTable.TrialErrorCode(j)
+                if ~eventTable.TrialErrorCode(j-1)
+                    if eventTable.expected_reward(j-1) == eventTable.expected_reward(j)
+                        if eventTable.RewardVariance(j-1) == eventTable.RewardVariance(j)
+                            ind{1} = [ind{1};j];
+                        elseif eventTable.RewardVariance(j-1) > eventTable.RewardVariance(j)
+                            ind{2} = [ind{2};j];
+                        elseif eventTable.RewardVariance(j-1) < eventTable.RewardVariance(j)
+                            ind{3} = [ind{3};j];
+                        end
+                    elseif eventTable.expected_reward(j-1) > eventTable.expected_reward(j)
+                        if eventTable.RewardVariance(j-1) == eventTable.RewardVariance(j)
+                            ind{4} = [ind{4};j];
+                        elseif eventTable.RewardVariance(j-1) > eventTable.RewardVariance(j)
+                            ind{5} = [ind{5};j];
+                        elseif eventTable.RewardVariance(j-1) < eventTable.RewardVariance(j)
+                            ind{6} = [ind{6};j];
+                        end
+                    elseif eventTable.expected_reward(j-1) < eventTable.expected_reward(j)
+                        if eventTable.RewardVariance(j-1) == eventTable.RewardVariance(j)
+                            ind{7} = [ind{7};j];
+                        elseif eventTable.RewardVariance(j-1) > eventTable.RewardVariance(j)
+                            ind{8} = [ind{8};j];
+                        elseif eventTable.RewardVariance(j-1) < eventTable.RewardVariance(j)
+                            ind{9} = [ind{9};j];
+                        end
+                    end
+                end
+            end
+        end
+
+        output = [];
+        output = [output; struct('TrialIdx',ind{1},'Value', ['EV1 = EV2  VAR1 = VAR2'],'GroupingType', grType)];
+        output = [output; struct('TrialIdx',ind{2},'Value', ['EV1 = EV2  VAR1 > VAR2'],'GroupingType', grType)];
+        output = [output; struct('TrialIdx',ind{3},'Value', ['EV1 = EV2  VAR1 < VAR2'],'GroupingType', grType)];
+        output = [output; struct('TrialIdx',ind{4},'Value', ['EV1 > EV2  VAR1 = VAR2'],'GroupingType', grType)];
+        output = [output; struct('TrialIdx',ind{5},'Value', ['EV1 > EV2  VAR1 > VAR2'],'GroupingType', grType)];
+        output = [output; struct('TrialIdx',ind{6},'Value', ['EV1 > EV2  VAR1 < VAR2'],'GroupingType', grType)];
+        output = [output; struct('TrialIdx',ind{7},'Value', ['EV1 < EV2  VAR1 = VAR2'],'GroupingType', grType)];
+        output = [output; struct('TrialIdx',ind{8},'Value', ['EV1 < EV2  VAR1 > VAR2'],'GroupingType', grType)];
+        output = [output; struct('TrialIdx',ind{9},'Value', ['EV1 < EV2  VAR1 < VAR2'],'GroupingType', grType)];
         
         
 end
