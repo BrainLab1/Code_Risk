@@ -208,7 +208,7 @@ function [trl,event] = fieldtrip_trialfun_RiskBhv(cfg)
                             diodEventTime{tr,1}.CueOffset    = diodChangTimBin(3);
                             if ~isnan(actualEventTime{tr,1}.TargetOnset)
                                 diodEventTime{tr,1}.TargetOnset  = diodChangTimBin(4);
-                                if ~isnan(actualEventTime{tr,1}.TargetOffset)
+                                if (~isnan(actualEventTime{tr,1}.TargetOffset) & ~isnan(actualEventTime{tr,1}.TargetAcquired))
                                     diodEventTime{tr,1}.TargetOffset = diodChangTimBin(6);
                                 end
                             end
