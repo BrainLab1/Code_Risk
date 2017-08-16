@@ -95,7 +95,7 @@ numRows = 2;
 numColumns = 2;
 binWidth = 0.1;
 xLimit = [min([zScoreMojRT(:,1);zScoreMacRT(:,1)]) , max([zScoreMojRT(:,1);zScoreMacRT(:,1)])] + [-1 1];
-yLimit = [0 510];
+yLimit = [0 350];
 xbins = xLimit(1) : binWidth : xLimit(2);
 plotBoxAspectRatio = [2, 1, 1];
 
