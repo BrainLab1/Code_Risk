@@ -21,7 +21,7 @@ save_dir             = 'Z:\data\Risk\Behavior\';
 
 % Set the options
 groupingCriteria       = 'SaccadeLaterality' ; % this parameter shows based on what criteria trials are grouped.
-
+infoText = {};
 %% Read out list of all the files related to this session
 dataPath = [main_folder data_folder original_data_folder];
 allFiles = dir(dataPath);    
@@ -55,7 +55,18 @@ for ses = 1:numel(allFiles) % for each session
     temp = [];
     for gr = 1:length(output)
         output(gr).SuccessTrlIdx = output(gr).TrialIdx( eventTable.TrialErrorCode(output(gr).TrialIdx) == 0 );
-        temp = [temp; [eventTable.ReactionTime(output(gr).SuccessTrlIdx) , repmat( output(gr).Value, length(output(gr).SuccessTrlIdx), 1)]];
+        % read out reaction times for this group of trials 
+        grpRT = eventTable.DiodeReactionTime(output(gr).SuccessTrlIdx);
+        % find the trials with negative reaction times
+        negativeRTtrlIdx = find( eventTable.DiodeReactionTime(output(gr).SuccessTrlIdx)<0 );
+        % add trial numbers with negative RT to the infoText
+        if ~isempty(negativeRTtrlIdx)
+            infoText = [infoText; {[regexprep(sessionFolder,'_','-') ': Group ' num2str(gr) ', negative reaction times in trials: ' num2str(negativeRTtrlIdx')]}];
+        end
+        clear negativeRTtrlIdx
+        % take only positive reaction times 
+        validRT = grpRT(grpRT>0);
+        temp = [temp; [validRT, repmat( output(gr).Value, length(validRT), 1)]];
     end
     allSesSuccessRT = [allSesSuccessRT; [{temp} {allFiles(ses).name(1:3)}]];
     clear gr output eventTable new_cfg tmp_cfg temp 
@@ -68,6 +79,7 @@ for ses = 1:length(allSesSuccessRT)
 end
 clear ses
 
+% note: at this point, allSesSuccessRT = [{[reactTime, saccadeLaterality]} {monkey name} {zscored reactTime}]
 %% 
 zScoreMacRT = [];
 sesIdx = find( strcmp(allSesSuccessRT(:,2), 'Mac') );
@@ -95,7 +107,7 @@ numRows = 2;
 numColumns = 2;
 binWidth = 0.1;
 xLimit = [min([zScoreMojRT(:,1);zScoreMacRT(:,1)]) , max([zScoreMojRT(:,1);zScoreMacRT(:,1)])] + [-1 1];
-yLimit = [0 350];
+yLimit = [0 450];
 xbins = xLimit(1) : binWidth : xLimit(2);
 plotBoxAspectRatio = [2, 1, 1];
 
@@ -171,7 +183,7 @@ clear  idx counts dummy
 figure 
 
 xLimit = [min(zScoreMojRT(:,1)) , max(zScoreMojRT(:,1))] + [-1 1];
-subplot( 1, 2, 1 ), hold on, box on
+subplot( 2, 2, 1 ), hold on, box on
 title('Mojo all saccade')
 [counts,~] = hist(zScoreMojRT(:,1), xbins);
 bar(xbins, counts, 'FaceColor', [153 255 204]/255)
@@ -186,7 +198,7 @@ text(2.5,250, [num2str(dummy(2)) ' trials'], 'Color', 'r')
 clear  counts dummy
 
 xLimit = [min(zScoreMacRT(:,1)) , max(zScoreMacRT(:,1))] + [-1 1];
-subplot( 1, 2, 2 ), hold on, box on
+subplot( 2, 2, 2 ), hold on, box on
 title('MacDuff all saccade')
 [counts,~] = hist(zScoreMacRT(:,1), xbins);
 bar(xbins, counts, 'FaceColor', [153 255 204]/255)
@@ -201,4 +213,5 @@ text(2.5,250, [num2str(dummy(2)) ' trials'], 'Color', 'r')
 clear  counts dummy
 
 
-
+subplot( 2, 2, 3 ), axis off
+text(0,1,infoText)
