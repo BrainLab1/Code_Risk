@@ -1,4 +1,6 @@
 
+% last update 16.08.2017: by Saeed; a new field named 'subjectID' is added
+% to the events structure
 % last update 08.08.2017:by Saeed; all the information about alignment event are
 % removed and one new field named 'Photodiode' is added. three fields named
 % 'offset', 'sample' and 'duration' are removed as they are extra for behavioral data
@@ -105,6 +107,15 @@ function [trl,event] = fieldtrip_trialfun_RiskBhv(cfg)
    end
    clear tmp tr ev eventNames eventCodes
    
+   
+    %% subject ID
+
+    if strcmp(bhv_file.SubjectName,'Mojo')
+        subjectID = num2cell(ones(size(trl,1),1));
+    elseif strcmp(bhv_file.SubjectName,'MacDuff')
+        subjectID = num2cell(2*ones(size(trl,1),1));
+    end
+    
     %% Extract the EyeSignal, LickingSignal and PupilSize 
     eyeSignal   = {};
     lickSignal  = {};
@@ -174,7 +185,7 @@ function [trl,event] = fieldtrip_trialfun_RiskBhv(cfg)
     reaction_time       = mat2cell(bhv_file.ReactionTime',ones(size(bhv_file.ReactionTime',1),1));
     trial_error_code    = mat2cell(bhv_file.TrialError,ones(size(bhv_file.TrialError,1),1)); 
     
-    new_events          = struct('type', conditions, 'TotalRewardTime', rewards, ...
+    new_events          = struct('subjectID',subjectID,'type', conditions, 'TotalRewardTime', rewards, ...
                             'expected_reward', expected_rewards, 'RewardVariance', rewardVariance, ...
                             'RewardOnTime',  reawardTime(:,1), 'RewardOffTime',  reawardTime(:,2), 'ReactionTime',  reaction_time, 'ActualEventTime', actualEventTime,...
                             'cue_pos', cue_positions, 'target_pos', target_positions, ...
