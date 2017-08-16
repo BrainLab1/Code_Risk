@@ -182,6 +182,17 @@ function [trl,event] = fieldtrip_trialfun_RiskBhv(cfg)
     diodeRT = {};  % this will include corrected reaction times
     
     for tr = 1: length(bhv_file.ConditionNumber)  % for each trial
+        diodEventTime{tr,1} = struct('MLTrialStart',NaN,'TrialGateOn',NaN,'FixationOn',NaN,'FixationAcquired',NaN,...
+                                     'CueOnset',NaN,'CueOffset',NaN,'TargetOnset',NaN,'TargetAcquired',NaN,...
+                                     'TargetOffset',NaN,'TrialGateOff',NaN,'MLTrialEnd',NaN);
+        % copy the non-visual event times
+        diodEventTime{tr,1}.MLTrialStart = actualEventTime{tr,1}.MLTrialStart;
+        diodEventTime{tr,1}.TrialGateOn  = actualEventTime{tr,1}.TrialGateOn;
+        diodEventTime{tr,1}.TrialGateOff = actualEventTime{tr,1}.TrialGateOff;
+        diodEventTime{tr,1}.MLTrialEnd   = actualEventTime{tr,1}.MLTrialEnd;
+        diodEventTime{tr,1}.TargetAcquired    = actualEventTime{tr,1}.TargetAcquired;
+        diodEventTime{tr,1}.FixationAcquired  = actualEventTime{tr,1}.FixationAcquired;
+        
         % get the time bin in which diode signal changes
         diodChangTimBin = find(diff(photoDiode{tr,1})>2.5 | diff(photoDiode{tr,1})<-2.5);
 
