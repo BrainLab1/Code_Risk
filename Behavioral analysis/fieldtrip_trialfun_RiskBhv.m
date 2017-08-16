@@ -1,6 +1,5 @@
 
-% last update 16.08.2017: by Saeed; a new field named 'subjectID' is added
-% to the events structure
+% last update 16.08.2017 by Bahareh:  event times and reaction times corrected for display latency, added to the output.
 % last update 08.08.2017:by Saeed; all the information about alignment event are
 % removed and one new field named 'Photodiode' is added. three fields named
 % 'offset', 'sample' and 'duration' are removed as they are extra for behavioral data
@@ -107,26 +106,19 @@ function [trl,event] = fieldtrip_trialfun_RiskBhv(cfg)
    end
    clear tmp tr ev eventNames eventCodes
    
-   
-    %% subject ID
-
-    if strcmp(bhv_file.SubjectName,'Mojo')
-        subjectID = num2cell(ones(size(trl,1),1));
-    elseif strcmp(bhv_file.SubjectName,'MacDuff')
-        subjectID = num2cell(2*ones(size(trl,1),1));
-    end
-    
-    %% Extract the EyeSignal, LickingSignal and PupilSize 
+    %% Extract the PhotoDiod, EyeSignal, LickingSignal and PupilSize 
     eyeSignal   = {};
     lickSignal  = {};
     pupilSize   = {};
+    photoDiode  = {};
     for tr = 1: length(bhv_file.ConditionNumber)  % for each trial
         eyeSignal{tr,1}  = bhv_file.AnalogData{tr}.EyeSignal;    
         lickSignal{tr,1} = bhv_file.AnalogData{tr}.General.Gen1;
         pupilSize{tr,1}  = struct('Height', bhv_file.AnalogData{tr}.General.Gen2, ...
                                   'Width', bhv_file.AnalogData{tr}.General.Gen3);
-        PhotoDiode{tr,1} = bhv_file.AnalogData{tr}.PhotoDiode;             
+        photoDiode{tr,1} = bhv_file.AnalogData{tr}.PhotoDiode;             
     end
+    clear tr
     
     %% Extract useful info from the .bhv file and pass it to output
     condition_structs   = [bhv_file.InfoByCond{:}]';
@@ -185,12 +177,62 @@ function [trl,event] = fieldtrip_trialfun_RiskBhv(cfg)
     reaction_time       = mat2cell(bhv_file.ReactionTime',ones(size(bhv_file.ReactionTime',1),1));
     trial_error_code    = mat2cell(bhv_file.TrialError,ones(size(bhv_file.TrialError,1),1)); 
     
-    new_events          = struct('subjectID',subjectID,'type', conditions, 'TotalRewardTime', rewards, ...
+    %% Correct ActualEventTime and ReactionTimes for display latency and pass it to the output
+    diodEventTime = {};
+    diodeRT = {};  % this will include corrected reaction times
+    
+    for tr = 1: length(bhv_file.ConditionNumber)  % for each trial
+        % get the time bin in which diode signal changes
+        diodChangTimBin = find(diff(photoDiode{tr,1})>2.5 | diff(photoDiode{tr,1})<-2.5);
+
+        % treat successful and failed trials differently!
+        switch trial_error_code{tr}
+            case 0  % for successful trials, diode changes 6 times
+                % correct event times
+                diodEventTime{tr,1}.FixationOn   = diodChangTimBin(1);
+                diodEventTime{tr,1}.CueOnset     = diodChangTimBin(2);
+                diodEventTime{tr,1}.CueOffset    = diodChangTimBin(3);
+                diodEventTime{tr,1}.TargetOnset  = diodChangTimBin(4);
+                % the 5th change of the diode signal occures at the time of reward!?
+                diodEventTime{tr,1}.TargetOffset = diodChangTimBin(6);
+                % correct reaction time
+                diodeRT{tr,1} = reaction_time{tr} - (diodEventTime{tr,1}.TargetOnset - actualEventTime{tr,1}.TargetOnset);
+                
+            otherwise
+                % correcte available event times
+                if ~isnan(actualEventTime{tr,1}.FixationOn)
+                    diodEventTime{tr,1}.FixationOn   = diodChangTimBin(1);
+                    if ~isnan(actualEventTime{tr,1}.CueOnset)
+                        diodEventTime{tr,1}.CueOnset     = diodChangTimBin(2);
+                        if ~isnan(actualEventTime{tr,1}.CueOffset)
+                            diodEventTime{tr,1}.CueOffset    = diodChangTimBin(3);
+                            if ~isnan(actualEventTime{tr,1}.TargetOnset)
+                                diodEventTime{tr,1}.TargetOnset  = diodChangTimBin(4);
+                                if ~isnan(actualEventTime{tr,1}.TargetOffset)
+                                    diodEventTime{tr,1}.TargetOffset = diodChangTimBin(6);
+                                end
+                            end
+                        end
+                    end
+                end
+                % correct reaction time if available
+                if isfield(diodEventTime{tr,1}, 'TargetOnset')
+                    diodeRT{tr,1} = reaction_time{tr} - (diodEventTime{tr,1}.TargetOnset - actualEventTime{tr,1}.TargetOnset);
+                else
+                    diodeRT{tr,1} = NaN;
+                end
+            end
+    end
+	clear tr
+    
+    
+    %% form the output on 
+    new_events          = struct('type', conditions, 'TotalRewardTime', rewards, ...
                             'expected_reward', expected_rewards, 'RewardVariance', rewardVariance, ...
-                            'RewardOnTime',  reawardTime(:,1), 'RewardOffTime',  reawardTime(:,2), 'ReactionTime',  reaction_time, 'ActualEventTime', actualEventTime,...
-                            'cue_pos', cue_positions, 'target_pos', target_positions, ...
+                            'RewardOnTime',  reawardTime(:,1), 'RewardOffTime',  reawardTime(:,2), 'ReactionTime',  reaction_time, 'DiodeReactionTime', diodeRT,...
+                            'ActualEventTime', actualEventTime, 'DiodeEventTime', diodEventTime, 'cue_pos', cue_positions, 'target_pos', target_positions, ...
                             'pre_good', pre_goods, 'TrialErrorCode', trial_error_code, ... 
-                            'EyeSignal', eyeSignal, 'LickSignal', lickSignal, 'PupilSize', pupilSize, 'PhotoDiode', PhotoDiode);
+                            'EyeSignal', eyeSignal, 'LickSignal', lickSignal, 'PupilSize', pupilSize, 'PhotoDiode', photoDiode);
     
     event               = [event; new_events];
 
