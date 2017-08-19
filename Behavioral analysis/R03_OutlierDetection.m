@@ -1,13 +1,15 @@
 
-
+% last update: Saeed; some bugs are fixed and outliers are named according
+% to the parameters. two outlier indices are added 'OutCueOnOffZ2' and
+% 'OutAqToRwdZ2' where Z2 means z-score for the outlier removal is 2
 % Saeed; this code removes the outliers of different trial timings
 % according to the specified properties by the user. it is remarkable that,
 % this code add a new field to the saved Behavioral data to specify which
 % trials are outliers '0' or not '1'.
 
-clear all;
-close all;
-clc;
+clear
+close all
+clc
 dbstop if error
 
 % Set the parameters bellow so that [main_folder data_folder bhv_folder] 
@@ -17,22 +19,25 @@ data_folder          = 'data\'; %
 original_data_folder = 'Risk\Original Data_Extracted\';
 save_dir             = 'Z:\data\Risk\Behavior\';
 
-% Set the options
-groupingCriteria       = 'subjectID' ; % this parameter shows based on what criteria trials are grouped.
-
 %% Read out list of all the files related to this session
 dataPath = [main_folder data_folder original_data_folder];
 allFiles = dir(dataPath);    
 
+tmp = [];
+for i = 1:length(allFiles)
+    if  numel(allFiles(i).name) < 3 
+        tmp = [tmp; i];
+    end
+end
+allFiles(tmp)=[];
+clear i tmp
 %%
 
 if 1
     
 Events = [];
-allSesSuccessRT = {}; % reaction time of all successful trials from all sessions and the group identifier -> [ {[reatTime saccadeTarget]} , {monkeyName}, {zscore(reactionTime)} ] 
 for ses = 1:numel(allFiles) % for each session
     % select the right file
-    if numel(allFiles(ses).name) > 3   
         sessionFolder = allFiles(ses).name;
         bhvFileInfo = dir([dataPath sessionFolder '\*.bhv']); 
         bhvFilePath = [dataPath sessionFolder '\' bhvFileInfo.name];
@@ -62,19 +67,15 @@ for ses = 1:numel(allFiles) % for each session
         % read ou the data the same way it is done in ReadRiskDataBhv.m
         new_cfg = ft_definetrial(tmp_cfg);
         
-        dir_name{ses-2} = new_cfg.session_dir;
-        
-        % group trials for 18 task conditions
-%         [output] = GroupTrials(new_cfg.event, groupingCriteria);
+        dir_name{ses} = new_cfg.session_dir;
 
         % convert the event tructure to table
         eventTable = struct2table(new_cfg.event);
-        eventTable.SessionID = (ses-2)*ones(size(eventTable,1),1);
+        eventTable.SessionID = (ses)*ones(size(eventTable,1),1);
         Events = [Events;eventTable];
         
         clear eventTable new_cfg
 
-    end
 end
 clear ses
 
@@ -97,42 +98,44 @@ end
 % outlierfield.trial_reward_offset = 1;
 % outlierfield.trial_trial_length = 1;
 % outlierfield.trial_fixation_to_acquired = 1;
-outlierfield.trial_cueonset_to_cueoffset = 1;
+% outlierfield.trial_cueonset_to_cueoffset = 1;
 % outlierfield.trial_cueoffset_to_targetacquired = 1;
 % outlierfield.trial_targeton_to_targetacquired = 1;
-outlierfield.trial_target_to_reward = 1;
+% outlierfield.trial_target_to_reward = 1;
 % outlierfield.trial_reward_duration = 1;
 % outlierfield.trial_reaction_time = 1;
 
-t1 = [Events.TrialErrorCode == 0];
-t2 = find(t1 > 0);
+t1 = [Events.TrialErrorCode == 0]; % binary vector of trial indices with successful trials '1' and error trials '0'
+indx = find(Events.TrialErrorCode == 0);% the indices of successful trials
+c = Events(indx,:);% table of successful trials
 
-indx = find(Events.TrialErrorCode == 0);
-c = Events(indx,:);
-
-[ totalTrials_new,outlier_indices ] = Outlier_remove( table2struct(c),outlierfield );
-
-
+% detection of outliers from CueOn to CueOff timing
+outlierfield.trial_cueonset_to_cueoffset = 1;
+[ ~,outlier_indices ] = Outlier_remove( table2struct(c),outlierfield );
 for i = 1:numel(outlier_indices)
-    outlier_index(i) = t2(outlier_indices(i));
-    ses_id(i) = Events.SessionID(outlier_index(i));
+    outlier_index(i) = indx(outlier_indices(i));
 end
+Events.OutCueOnOffZ2 = zeros(size(Events,1),1);
+Events.OutCueOnOffZ2(outlier_index) = 1;
+clear outlier_indices outlier_index
 
-num_session = numel(unique([totalTrials_new.SessionID]));
+% detection of outliers from Target Acuired to Reward On timing
+outlierfield.trial_target_to_reward = 1;
+[ ~,outlier_indices ] = Outlier_remove( table2struct(c),outlierfield );
+for i = 1:numel(outlier_indices)
+    outlier_index(i) = indx(outlier_indices(i));
+end
+Events.OutAqToRwdZ2 = zeros(size(Events,1),1);
+Events.OutAqToRwdZ2(outlier_index) = 1;
+clear outlier_indices outlier_index
 
-for j = 1:num_session
+for j = 1:length(allFiles)
+    trl = find(Events.SessionID == j);
     load ([save_dir 'Bhv_' dir_name{j} '.mat'])
-    Q = struct2table(new_cfg.event);
-    Q.OutlierIndex = zeros(size(new_cfg.event,1),1);
-    
-    q1 = find(ses_id == j);
-    for i = 1:numel(q1)
-        Q.OutlierIndex(outlier_index(q1(i))) = 1;
-    end
-    
-    new_cfg.event = table2struct(Q);
+    new_cfg.event = table2struct(Events(trl,:));
+    new_cfg.event = rmfield(new_cfg.event,'SessionID');
     
     save ([save_dir 'Bhv_' dir_name{j} '.mat'], 'new_cfg')
-    clear new_cfg Q q1
+    clear trl new_cfg
 end
 

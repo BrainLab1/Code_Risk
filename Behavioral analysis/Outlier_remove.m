@@ -2,7 +2,7 @@ function [ totalTrials_new,outlier_indices ] = Outlier_remove( totalTrials,outli
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 
-zscore_thr = 3;
+zscore_thr = 2;
 outlier_indices = [];
 
 for i = 1:2  % '1' for Mojo and '2' for MacDuff
