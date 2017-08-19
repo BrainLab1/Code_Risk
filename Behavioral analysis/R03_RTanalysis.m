@@ -26,7 +26,8 @@ colorCode = [  204 204 255  % F3
                0  153 153]/255; % B9H   
            
 rtOutlierFactor = 2; % outliers are trials out of this intervel [-1 1]*trOutlierFactor*Std; Std for each monkey is different
-monkeyName = 'Mojo';  % 'Moj' or 'Mac'
+removeNegativeRT = 1; % this is a flag
+monkeyName = 'Mac';  % 'Moj' or 'Mac'
 groupingCriteria       = 'expected_reward & Congruence' ; % this parameter shows based on what criteria trials are grouped.
 
 %% Read out list of all the files related to this session
@@ -46,16 +47,27 @@ clear ses idx
 %% Extract and group reaction times
 allSesGroupedData = {};
 allSesSuccRT = cell(numel(allFiles),1);  % collected reaction times from successful trials of each session
+removedTrials = {};
 
 for ses = 1:numel(allFiles) % for each session
     sessionFolder = allFiles(ses).name;
     load ([save_dir 'Bhv_' allFiles(ses).name])
- 
-    % group trials for 9 task conditions
-    [output] = GroupTrials(new_cfg.event, groupingCriteria);
-
+    
     % convert the event tructure to table
     eventTable = struct2table(new_cfg.event);
+    
+    % reamove trials with negative reaction times, if asked
+    if removeNegativeRT
+        invalidTrls = find(eventTable.DiodeReactionTime<=0);
+        refineevent = new_cfg.event;
+        refineevent(invalidTrls)=[];
+        eventTable = struct2table(refineevent);
+        removedTrials{ses} = invalidTrls;
+        clear refineevent invalidTrls
+    end
+
+    % group trials for 9 task conditions
+    [output] = GroupTrials(table2struct(eventTable), groupingCriteria);
 
     % get the trial index for successful trials per condition
     for gr = 1:length(output)
@@ -68,7 +80,7 @@ for ses = 1:numel(allFiles) % for each session
 % % %                 continue
 % % %             end
             % read out the reaction time for this successful trial of this group
-            tempRT = [tempRT; eventTable.ReactionTime(trIdx)];
+            tempRT = [tempRT; eventTable.DiodeReactionTime(trIdx)];
             clear trIdx
         end
         output(gr).SuccessRT   = tempRT; 
@@ -82,9 +94,10 @@ for ses = 1:numel(allFiles) % for each session
 end
 clear ses
 
-%% take the zscore(log(RT)), remove outliers
+%% remove negative reaction times, take the zscore(log(RT)), remove outliers
 allSesSuccTransformRT = cell(numel(allFiles),1);  % transformed reaction times from successful trials of each session
 for ses = 1:length(allSesSuccRT)
+    % transform reaction times
     allSesSuccTransformRT{ses} = zscore(log(allSesSuccRT{ses}));
     
     trlPerGrp = []; % number of successful trials per group for this session
@@ -106,8 +119,14 @@ end
 
 %% plot distribution of reaction times from all sessions
 figure('Name', monkeyName)
-hold on, box on, title([monkeyName ', ' num2str(length(allSesGroupedData)) ' sessions, ' ...
-                        num2str(length(cell2mat(allSesSuccTransformRT))) ' trials'])
+hold on, box on, 
+if removeNegativeRT
+    title([{[monkeyName ', ' num2str(length(allSesSuccRT)) ' sessions, ' num2str(length(cell2mat(allSesSuccTransformRT))) ' trials']},...
+           {[num2str(length(cell2mat(removedTrials'))) ' trials with RT<=0 removed']}])
+else
+    title([monkeyName ', ' num2str(length(allSesGroupedData)) ' sessions, ' ...
+           num2str(length(cell2mat(allSesSuccTransformRT))) ' trials'])
+end
 ylabel('number of trials')                    
 xlabel('zscore( Log( ReactionTime ) )')
 aa = cell2mat(allSesSuccTransformRT);  
@@ -149,7 +168,12 @@ deltaRT = meanRT(:,1:3) - meanRT(:,4:6);
 figure, hold on, box on
 xlabel('expected reward')
 ylabel([{'congRT - incongRT'},{'+/- SEM'}])
-title([monkeyName ', ' num2str(length(allSesSuccRT)) ' sessions, outliers: std*' num2str(rtOutlierFactor)])
+if removeNegativeRT
+    title([{[monkeyName ', ' num2str(length(allSesSuccRT)) ' sessions, outliers: std*' num2str(rtOutlierFactor)]},...
+           {[num2str(length(cell2mat(removedTrials'))) ' trials with RT<=0 removed']}])
+else
+    title([monkeyName ', ' num2str(length(allSesSuccRT)) ' sessions, outliers: std*' num2str(rtOutlierFactor)])
+end
 errorbar(1:3, mean(deltaRT), std(deltaRT)/sqrt(size(deltaRT,1)))
 set(gca, 'XLim', [0 4], 'XTick', [1:3], 'XTickLabel', [{'3'},{'6'},{'9'}])
 [pKruskalWallis,tbl,stats] = kruskalwallis(deltaRT,[],'off');
