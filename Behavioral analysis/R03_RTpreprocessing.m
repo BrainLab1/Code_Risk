@@ -45,7 +45,7 @@ for ses = 1:numel(allFiles) % for each session
     sessionFolder = allFiles(ses).name;
     load ([save_dir 'Bhv_' allFiles(ses).name])
         
-    % group trials for 18 task conditions
+    % group trials for 2 task conditions
     [output] = GroupTrials(new_cfg.event, groupingCriteria);
 
     % convert the event tructure to table
@@ -80,7 +80,7 @@ end
 clear ses
 
 % note: at this point, allSesSuccessRT = [{[reactTime, saccadeLaterality]} {monkey name} {zscored reactTime}]
-%% 
+%% Split reaction times based on monkeys
 zScoreMacRT = [];
 sesIdx = find( strcmp(allSesSuccessRT(:,2), 'Mac') );
 for ses = 1:length(sesIdx)
