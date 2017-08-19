@@ -1,4 +1,5 @@
 
+% last update: 19.08.2017 by Saeed: new condition added for 'OutlierIndex'
 % last update: 19.08.2017 by Bahareh: new condition added for 'expected_reward & Congruence'
 % last update: 15.08.2017 by Saeed: new conditions added for 'PreTrialEV', 'PreTrialVAR' & 'PreTrialEV&VAR'
 % last update: 30.07.2017 by Bahareh: new conditions added for 'type & Congruence', 
@@ -28,7 +29,7 @@ switch grType
                                      'GroupingType', grType)];
         end
         
-    case {'value', 'expected_reward', 'cue_pos', 'target_pos', 'pre_good', 'taskCondCode','subjectID','SessionID'}
+    case {'value', 'expected_reward', 'cue_pos', 'target_pos', 'pre_good', 'taskCondCode','subjectID','SessionID','OutlierIndex'}
         eventTable = struct2table(event);
         possibleVals = unique(eventTable.(grType));
         output = [];
