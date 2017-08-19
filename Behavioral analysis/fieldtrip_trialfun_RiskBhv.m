@@ -1,4 +1,6 @@
 
+% last update 19.08.2017: by Saeed; a new field named 'subjectID' is added
+% to the events structure
 % last update 16.08.2017 by Bahareh:  event times and reaction times corrected for display latency, added to the output.
 % last update 08.08.2017:by Saeed; all the information about alignment event are
 % removed and one new field named 'Photodiode' is added. three fields named
@@ -106,6 +108,14 @@ function [trl,event] = fieldtrip_trialfun_RiskBhv(cfg)
    end
    clear tmp tr ev eventNames eventCodes
    
+   
+    %% subject ID
+   if strcmp(bhv_file.SubjectName,'Mojo')
+       subjectID = num2cell(ones(size(trl,1),1));
+   elseif strcmp(bhv_file.SubjectName,'MacDuff')
+       subjectID = num2cell(2*ones(size(trl,1),1));
+   end
+   
     %% Extract the PhotoDiod, EyeSignal, LickingSignal and PupilSize 
     eyeSignal   = {};
     lickSignal  = {};
@@ -182,17 +192,6 @@ function [trl,event] = fieldtrip_trialfun_RiskBhv(cfg)
     diodeRT = {};  % this will include corrected reaction times
     
     for tr = 1: length(bhv_file.ConditionNumber)  % for each trial
-        diodEventTime{tr,1} = struct('MLTrialStart',NaN,'TrialGateOn',NaN,'FixationOn',NaN,'FixationAcquired',NaN,...
-                                     'CueOnset',NaN,'CueOffset',NaN,'TargetOnset',NaN,'TargetAcquired',NaN,...
-                                     'TargetOffset',NaN,'TrialGateOff',NaN,'MLTrialEnd',NaN);
-        % copy the non-visual event times
-        diodEventTime{tr,1}.MLTrialStart = actualEventTime{tr,1}.MLTrialStart;
-        diodEventTime{tr,1}.TrialGateOn  = actualEventTime{tr,1}.TrialGateOn;
-        diodEventTime{tr,1}.TrialGateOff = actualEventTime{tr,1}.TrialGateOff;
-        diodEventTime{tr,1}.MLTrialEnd   = actualEventTime{tr,1}.MLTrialEnd;
-        diodEventTime{tr,1}.TargetAcquired    = actualEventTime{tr,1}.TargetAcquired;
-        diodEventTime{tr,1}.FixationAcquired  = actualEventTime{tr,1}.FixationAcquired;
-        
         % get the time bin in which diode signal changes
         diodChangTimBin = find(diff(photoDiode{tr,1})>2.5 | diff(photoDiode{tr,1})<-2.5);
 
@@ -238,7 +237,7 @@ function [trl,event] = fieldtrip_trialfun_RiskBhv(cfg)
     
     
     %% form the output on 
-    new_events          = struct('type', conditions, 'TotalRewardTime', rewards, ...
+    new_events          = struct('subjectID',subjectID,'type', conditions, 'TotalRewardTime', rewards, ...
                             'expected_reward', expected_rewards, 'RewardVariance', rewardVariance, ...
                             'RewardOnTime',  reawardTime(:,1), 'RewardOffTime',  reawardTime(:,2), 'ReactionTime',  reaction_time, 'DiodeReactionTime', diodeRT,...
                             'ActualEventTime', actualEventTime, 'DiodeEventTime', diodEventTime, 'cue_pos', cue_positions, 'target_pos', target_positions, ...
