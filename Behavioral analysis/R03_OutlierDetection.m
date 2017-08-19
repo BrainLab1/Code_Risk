@@ -120,7 +120,7 @@ end
 
 num_session = numel(unique([totalTrials_new.SessionID]));
 
-for j = 1:numel(num_session)
+for j = 1:num_session
     load ([save_dir 'Bhv_' dir_name{j} '.mat'])
     Q = struct2table(new_cfg.event);
     Q.OutlierIndex = zeros(size(new_cfg.event,1),1);
@@ -133,5 +133,6 @@ for j = 1:numel(num_session)
     new_cfg.event = table2struct(Q);
     
     save ([save_dir 'Bhv_' dir_name{j} '.mat'], 'new_cfg')
+    clear new_cfg Q q1
 end
 
