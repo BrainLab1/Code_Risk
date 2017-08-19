@@ -1,4 +1,5 @@
 
+% last update: 19.08.2017 by Bahareh: new condition added for 'expected_reward & Congruence'
 % last update: 15.08.2017 by Saeed: new conditions added for 'PreTrialEV', 'PreTrialVAR' & 'PreTrialEV&VAR'
 % last update: 30.07.2017 by Bahareh: new conditions added for 'type & Congruence', 
 % last update: 25.07.2017 by Bahareh: new conditions added for '18 task conditions', 'SaccadeLaterality', 
@@ -197,6 +198,19 @@ switch grType
                                      'GroupingType', grType)];
         end
         
+    case 'expected_reward & Congruence'
+        eventTable = struct2table(event);
+        possibleVals = unique(eventTable.expected_reward); % this will gige you 3 expected reward value
+        possibleVals = [ [possibleVals,  ones(length(possibleVals),1)];...
+                         [possibleVals, -ones(length(possibleVals),1)] ];
+        output = [];
+        congeurncyIdx = eventTable.cue_pos .* eventTable.target_pos;
+        for i=1:size(possibleVals,1)
+            output = [output; struct('TrialIdx', find( (eventTable.expected_reward == possibleVals(i,1)) .* (congeurncyIdx == possibleVals(i,2)) ), ...
+                                     'Value', possibleVals(i,:), ...
+                                     'GroupingType', grType)];
+        end
+        
     case 'PreTrialEV'
         ind1 = [];
         ind2 = [];
@@ -246,7 +260,6 @@ switch grType
         output = [output; struct('TrialIdx',ind1,'Value', ['VAR1 = VAR2'],'GroupingType', grType)];
         output = [output; struct('TrialIdx',ind2,'Value', ['VAR1 > VAR2'],'GroupingType', grType)];
         output = [output; struct('TrialIdx',ind3,'Value', ['VAR1 < VAR2'],'GroupingType', grType)];
-        
         
     case 'PreTrialEV&VAR'        
         ind = cell(1,9);
