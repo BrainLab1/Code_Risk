@@ -262,49 +262,70 @@ switch grType
         
     case 'PreTrlOutcome & CurrentTrlVar'
         output = [];
-        win1 = [];  win4 = [];  
-        los1 = [];  los4 = [];  
+        win0 = [];  win1 = [];   win4 = [];  
+        los0 = [];  los1 = [];   los4 = [];  
         eventTable = struct2table(event);        
         for tr = 2:size(eventTable,1)  % for each trial
             if ~eventTable.TrialErrorCode(tr) % if current trial was successful
                 if ( ~eventTable.TrialErrorCode(tr-1)  && ~strcmp(eventTable.type{tr-1}(1),'F') ) % if previous trial was successful (rewarded) && reawrd variance was not zero   
-                    switch [eventTable.RewardVariance(tr) eventTable.expected_reward(tr)]
-                        case [1, 3]
+                    switch ['[' num2str(eventTable.RewardVariance(tr)) ' ' num2str(eventTable.expected_reward(tr)) ']']
+                        case '[0 3]'
+                            % 125ms is considered the threshold between distribution of reward times for win and lose trials
+                            if eventTable.TotalRewardTime(tr)<125 
+                                los0 = [los0; tr];
+                            else 
+                                win0 = [win0; tr];
+                            end
+                        case '[0 6]'
+                            % 225ms is considered the threshold between distribution of reward times for win and lose trials
+                            if eventTable.TotalRewardTime(tr)<225 
+                                los0 = [los0; tr];
+                            else 
+                                win0 = [win0; tr];
+                            end
+                        case '[0 9]'
+                            % 325ms is considered the threshold between distribution of reward times for win and lose trials
+                            if eventTable.TotalRewardTime(tr)<325 
+                                los0 = [los0; tr];
+                            else 
+                                win0 = [win0; tr];
+                            end
+                        case '[1 3]'
                             % 125ms is considered the threshold between distribution of reward times for win and lose trials
                             if eventTable.TotalRewardTime(tr)<125 
                                 los1 = [los1; tr];
                             else 
                                 win1 = [win1; tr];
                             end
-                        case [1, 6]
+                        case '[1 6]'
                             % 225ms is considered the threshold between distribution of reward times for win and lose trials
                             if eventTable.TotalRewardTime(tr)<225 
                                 los1 = [los1; tr];
                             else 
                                 win1 = [win1; tr];
                             end
-                        case [1, 9]
+                        case '[1 9]'
                             % 325ms is considered the threshold between distribution of reward times for win and lose trials
                             if eventTable.TotalRewardTime(tr)<325 
                                 los1 = [los1; tr];
                             else 
                                 win1 = [win1; tr];
                             end
-                        case [4, 3]
+                        case '[4 3]'
                             % 125ms is considered the threshold between distribution of reward times for win and lose trials
                             if eventTable.TotalRewardTime(tr)<125 
                                 los4 = [los4; tr];
                             else 
                                 win4 = [win4; tr];
                             end
-                        case [4, 6]
+                        case '[4 6]'
                             % 225ms is considered the threshold between distribution of reward times for win and lose trials
                             if eventTable.TotalRewardTime(tr)<225 
                                 los4 = [los4; tr];
                             else 
                                 win4 = [win4; tr];
                             end
-                        case [4, 9]
+                        case '[4 9]'
                             % 325ms is considered the threshold between distribution of reward times for win and lose trials
                             if eventTable.TotalRewardTime(tr)<325 
                                 los4 = [los4; tr];
@@ -315,8 +336,10 @@ switch grType
                 end
             end
         end
+        output = [output; struct('TrialIdx', los0, 'Value', 'lose 0', 'GroupingType', grType)];
         output = [output; struct('TrialIdx', los1, 'Value', 'lose 1', 'GroupingType', grType)];
         output = [output; struct('TrialIdx', los4, 'Value', 'lose 4', 'GroupingType', grType)];
+        output = [output; struct('TrialIdx', win0, 'Value', 'win 0', 'GroupingType', grType)];
         output = [output; struct('TrialIdx', win1, 'Value', 'win 1', 'GroupingType', grType)];
         output = [output; struct('TrialIdx', win4, 'Value', 'win 4', 'GroupingType', grType)];
     
