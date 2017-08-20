@@ -1,4 +1,6 @@
 
+% last update: 20.08.2017 by Bahareh: new condition added for 'PreTrlOutcome & CurrentTrlEV' where successful trials for which the 
+%      previos trial was rewarded, are grouped for expected value of the current trial and outcome (win or lose) of the previouse trial
 % last update: 19.08.2017 by Saeed: new condition added for 'OutlierIndex'
 % last update: 19.08.2017 by Bahareh: new condition added for 'expected_reward & Congruence'
 % last update: 15.08.2017 by Saeed: new conditions added for 'PreTrialEV', 'PreTrialVAR' & 'PreTrialEV&VAR'
@@ -212,6 +214,50 @@ switch grType
                                      'GroupingType', grType)];
         end
         
+    case 'PreTrlOutcome & CurrentTrlEV'
+        output = [];
+        win3 = [];  win6 = [];  win9 = [];
+        los3 = [];  los6 = [];  los9 = [];
+        eventTable = struct2table(event);        
+        for tr = 2:size(eventTable,1)  % for each trial
+            if ~eventTable.TrialErrorCode(tr) % if current trial was successful
+                if ( ~eventTable.TrialErrorCode(tr-1)  && ~strcmp(eventTable.type{tr-1}(1),'F') ) % if previous trial was successful (rewarded) && reawrd variance was not zero   
+                    switch eventTable.expected_reward(tr)
+                        case 3
+                            % 125ms is considered the threshold between distribution of reward times for win and lose trials
+                            if eventTable.TotalRewardTime(tr)<125 
+                                los3 = [los3; tr];
+                            else 
+                                win3 = [win3; tr];
+                            end
+                            
+                        case 6
+                            % 225ms is considered the threshold between distribution of reward times for win and lose trials
+                             if eventTable.TotalRewardTime(tr)<225 
+                                los6 = [los6; tr];
+                             else 
+                                win6 = [win6; tr];
+                             end                           
+                            
+                        case 9
+                            % 325ms is considered the threshold between distribution of reward times for win and lose trials
+                            if eventTable.TotalRewardTime(tr)<325 
+                                los9 = [los9; tr];
+                            else 
+                                win9 = [win9; tr];
+                            end
+                    end
+                end
+            end
+        end
+        output = [output; struct('TrialIdx', los3, 'Value', 'lose 3', 'GroupingType', grType)];
+        output = [output; struct('TrialIdx', los6, 'Value', 'lose 6', 'GroupingType', grType)];
+        output = [output; struct('TrialIdx', los9, 'Value', 'lose 9', 'GroupingType', grType)];
+        output = [output; struct('TrialIdx', win3, 'Value', 'win 3', 'GroupingType', grType)];
+        output = [output; struct('TrialIdx', win6, 'Value', 'win 6', 'GroupingType', grType)];
+        output = [output; struct('TrialIdx', win9, 'Value', 'win 9', 'GroupingType', grType)];
+    
+    
     case 'PreTrialEV'
         ind1 = [];
         ind2 = [];
