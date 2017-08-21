@@ -27,7 +27,7 @@ colorCode = [  204 204 255  % F3
            
 rtOutlierFactor = 2; % outliers are trials out of this intervel [-1 1]*trOutlierFactor*Std; Std for each monkey is different
 removeNegativeRT = 1; % this is a flag
-monkeyName = 'Mac';  % 'Moj' or 'Mac'
+monkeyName = 'MacDuff';  % 'Moj' or 'Mac'
 groupingCriteria       = 'expected_reward & Congruence' ; % this parameter shows based on what criteria trials are grouped.
 
 %% Read out list of all the files related to this session
