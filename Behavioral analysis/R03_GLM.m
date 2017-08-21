@@ -2,7 +2,7 @@
 % this script analyzes effect of the prior trial reward on the licking
 % probability of the current trial
 
-clear all;
+clear
 clc;
 dbstop if error
 
@@ -57,7 +57,7 @@ for ses = 1:numel(allFiles) % for each session
     eventTable = new_cfg.event;
     for tr = 2:size(eventTable,1)  % for each trial
         if ~eventTable(tr).TrialErrorCode % if current trial was successful
-            if ~eventTable(tr-1).TrialErrorCode
+            if ( ~eventTable(tr-1).TrialErrorCode  && ~strcmp(eventTable(tr-1).type,'F') )
                 temp = [];
                 switch alignEvent
                     case 'cue'
@@ -77,12 +77,11 @@ for ses = 1:numel(allFiles) % for each session
                 X(indx,2) = eventTable(tr).RewardVariance;
                 X(indx,3) = eventTable(tr-1).RewardVariance;
                 X(indx,4) = eventTable(tr-1).TotalRewardTime;
-                if ~isempty(strfind(eventTable(tr-1).type,'L'))
+                
+                if eventTable(tr-1).TotalRewardTime < ((eventTable(tr-1).expected_reward/3-1)*100+125)% low rewarded pre-trial
                     X(indx,5) = -1;
-                elseif ~isempty(strfind(eventTable(tr-1).type,'H'))
+                else % high rewarded pre-trial
                     X(indx,5) = 1;
-                else
-                    X(indx,5) = 0;
                 end
                 indx = indx + 1;
             end
