@@ -2,8 +2,6 @@
 % this script analyzes effect of the prior trial reward on the licking
 % probability of the current trial
 
-
-
 clear all;
 clc;
 dbstop if error
