@@ -1,4 +1,5 @@
 
+
 % last update: 20.08.2017 by Bahareh: new condition added for 'PreTrlOutcome & CurrentTrlVar' where successful trials for which the 
 %      previos trial was rewarded, are grouped for reward variance of the current trial and outcome (win or lose) of the previouse trial
 % last update: 20.08.2017 by Bahareh: new condition added for 'PreTrlOutcome & CurrentTrlEV' where successful trials for which the 
