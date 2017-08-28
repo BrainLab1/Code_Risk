@@ -1,5 +1,5 @@
 
-
+% last update: 28.08.2017 by Bahareh: new condition added for 'expecter_reward & RewardVariance'
 % last update: 20.08.2017 by Bahareh: new condition added for 'PreTrlOutcome & CurrentTrlVar' where successful trials for which the 
 %      previos trial was rewarded, are grouped for reward variance of the current trial and outcome (win or lose) of the previouse trial
 % last update: 20.08.2017 by Bahareh: new condition added for 'PreTrlOutcome & CurrentTrlEV' where successful trials for which the 
@@ -442,7 +442,22 @@ switch grType
         output = [output; struct('TrialIdx',ind{8},'Value', ['EV1 < EV2  VAR1 > VAR2'],'GroupingType', grType)];
         output = [output; struct('TrialIdx',ind{9},'Value', ['EV1 < EV2  VAR1 < VAR2'],'GroupingType', grType)];
         
+    case 'expecter_reward & RewardVariance'
+        eventTable = struct2table(event);
+        output = [];
+        allConditions = unique([eventTable.expected_reward  eventTable.RewardVariance],'rows');
+        % get the trial indices for variance 0
+        idx = [];
+        for gr = 1:size(allConditions,1)
+            idx = find( (eventTable.expected_reward==allConditions(gr,1)) .* (eventTable.RewardVariance==allConditions(gr,2)) );
+            output = [output; struct('TrialIdx', idx, ...
+                                     'Value', allConditions(gr,:), ...
+                                     'GroupingType', grType)];
+            clear idx
+       end
+        clear gr
         
+  
 end
 
 return
