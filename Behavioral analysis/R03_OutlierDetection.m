@@ -1,4 +1,6 @@
 
+% last update: by Saeed; detection of RT outliers with zscore of log is
+% added
 % last update: Saeed; some bugs are fixed and outliers are named according
 % to the parameters. two outlier indices are added 'OutCueOnOffZ2' and
 % 'OutAqToRwdZ2' where Z2 means z-score for the outlier removal is 2
@@ -32,8 +34,6 @@ end
 allFiles(tmp)=[];
 clear i tmp
 %%
-
-if 1
     
 Events = [];
 for ses = 1:numel(allFiles) % for each session
@@ -78,10 +78,6 @@ for ses = 1:numel(allFiles) % for each session
 
 end
 clear ses
-
-
-end
-
 
 %% specify the parameter which you would like to remove outliers from it
 
@@ -128,6 +124,17 @@ end
 Events.OutAqToRwdZ2 = zeros(size(Events,1),1);
 Events.OutAqToRwdZ2(outlier_index) = 1;
 clear outlier_indices outlier_index
+
+% detection of outliers from Reaction Time
+outlierfield.trial_reaction_time = 1;
+[ ~,outlier_indices ] = Outlier_remove( table2struct(c),outlierfield );
+for i = 1:numel(outlier_indices)
+    outlier_index(i) = indx(outlier_indices(i));
+end
+Events.OutRTZ2 = zeros(size(Events,1),1);
+Events.OutRTZ2(outlier_index) = 1;
+clear outlier_indices outlier_index
+
 
 for j = 1:length(allFiles)
     trl = find(Events.SessionID == j);
