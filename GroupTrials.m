@@ -1,4 +1,4 @@
-
+% last update: 29.08.2017 by Bahareh: new condition added for 'expecter_reward & RewardVariance & Outcome'
 % last update: 28.08.2017 by Bahareh: new condition added for 'expecter_reward & RewardVariance'
 % last update: 20.08.2017 by Bahareh: new condition added for 'PreTrlOutcome & CurrentTrlVar' where successful trials for which the 
 %      previos trial was rewarded, are grouped for reward variance of the current trial and outcome (win or lose) of the previouse trial
@@ -456,6 +456,56 @@ switch grType
             clear idx
        end
         clear gr
+        
+    case 'expecter_reward & RewardVariance & Outcome'
+        eventTable = struct2table(event);
+        output = [];
+        allConditions = [3  0  0   %  -
+                         6  0  0   % | there is no win or lose outcome for zero variance 
+                         9  0  0   %  -
+                         ...
+                         3  1  -1  %  -
+                         6  1  -1  % | variance 1; losing trials
+                         9  1  -1  %  -
+                         3  1  1   %  -
+                         6  1  1   % | variance 1; winning trials
+                         9  1  1   %  -
+                         ...
+                         3  4  -1  %  -
+                         6  4  -1  % | variance 4; losing trials
+                         9  4  -1  %  -
+                         3  4  1   %  -
+                         6  4  1   % | variance 4; winning trials
+                         9  4  1]; %  -
+        
+         outcomeThreshold = [NaN; NaN; NaN; 125; 225; 325; 125; 225; 325; 125; 225; 325; 125; 225; 325];
+                         
+        % get the trial indices for variance 0
+        rewdCueTrIdx = [];
+        for gr = 1:size(allConditions,1)
+            % find trials indeces for each group based on what the cue info
+            rewdCueTrIdx = find( (eventTable.expected_reward==allConditions(gr,1)) .* (eventTable.RewardVariance==allConditions(gr,2)) );
+            
+            % treat conditions differently based on variablity of the reward 
+            if ~isnan(outcomeThreshold(gr)) % this is for when reward variance is not zero  
+                switch allConditions(gr,3)
+                    case -1 % collect losing trials for this group
+                        idx = rewdCueTrIdx( find(eventTable.TotalRewardTime(rewdCueTrIdx) < outcomeThreshold(gr)) );
+                    case 1  % collect winning trials for this group
+                        idx = rewdCueTrIdx( find(eventTable.TotalRewardTime(rewdCueTrIdx) > outcomeThreshold(gr)) );
+                end
+            else % this is for F3, F6 and F9 cue conditions
+                idx = rewdCueTrIdx;
+            end
+            
+            % pass this group to the output
+            output = [output; struct('TrialIdx', idx, ...
+                                     'Value', allConditions(gr,:), ...
+                                     'GroupingType', grType)];
+
+            clear rewdCueTrIdx idx
+       end
+       clear gr
         
   
 end
