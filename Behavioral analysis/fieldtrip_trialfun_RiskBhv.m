@@ -1,4 +1,6 @@
 
+% last update 29.08.2017: by Saeed; bug in diode timing calculation is
+% fixed
 % last update 19.08.2017: by Saeed; a new field named 'subjectID' is added
 % to the events structure
 % last update 16.08.2017 by Bahareh:  event times and reaction times corrected for display latency, added to the output.
@@ -188,50 +190,50 @@ function [trl,event] = fieldtrip_trialfun_RiskBhv(cfg)
     trial_error_code    = mat2cell(bhv_file.TrialError,ones(size(bhv_file.TrialError,1),1)); 
     
     %% Correct ActualEventTime and ReactionTimes for display latency and pass it to the output
-    diodEventTime = {};
+    diodEventTime = {}; % corrected eventtimes for display latency (not aligned)
     diodeRT = {};  % this will include corrected reaction times
     
     for tr = 1: length(bhv_file.ConditionNumber)  % for each trial
         % get the time bin in which diode signal changes
         diodChangTimBin = find(diff(photoDiode{tr,1})>2.5 | diff(photoDiode{tr,1})<-2.5);
+        
+        % initialize the diodEventTime for current trial
+        diodEventTime{tr,1}.CueOnset = NaN;
+        
 
-        % treat successful and failed trials differently!
-        switch trial_error_code{tr}
-            case 0  % for successful trials, diode changes 6 times
-                % correct event times
-                diodEventTime{tr,1}.FixationOn   = diodChangTimBin(1);
-                diodEventTime{tr,1}.CueOnset     = diodChangTimBin(2);
-                diodEventTime{tr,1}.CueOffset    = diodChangTimBin(3);
-                diodEventTime{tr,1}.TargetOnset  = diodChangTimBin(4);
-                % the 5th change of the diode signal occures at the time of reward!?
-                diodEventTime{tr,1}.TargetOffset = diodChangTimBin(6);
-                % correct reaction time
-                diodeRT{tr,1} = reaction_time{tr} - (diodEventTime{tr,1}.TargetOnset - actualEventTime{tr,1}.TargetOnset);
-                
-            otherwise
-                % correcte available event times
-                if ~isnan(actualEventTime{tr,1}.FixationOn)
-                    diodEventTime{tr,1}.FixationOn   = diodChangTimBin(1);
-                    if ~isnan(actualEventTime{tr,1}.CueOnset)
-                        diodEventTime{tr,1}.CueOnset     = diodChangTimBin(2);
-                        if ~isnan(actualEventTime{tr,1}.CueOffset)
-                            diodEventTime{tr,1}.CueOffset    = diodChangTimBin(3);
-                            if ~isnan(actualEventTime{tr,1}.TargetOnset)
-                                diodEventTime{tr,1}.TargetOnset  = diodChangTimBin(4);
-                                if (~isnan(actualEventTime{tr,1}.TargetOffset) & ~isnan(actualEventTime{tr,1}.TargetAcquired))
-                                    diodEventTime{tr,1}.TargetOffset = diodChangTimBin(6);
-                                end
-                            end
-                        end
-                    end
-                end
-                % correct reaction time if available
-                if isfield(diodEventTime{tr,1}, 'TargetOnset')
-                    diodeRT{tr,1} = reaction_time{tr} - (diodEventTime{tr,1}.TargetOnset - actualEventTime{tr,1}.TargetOnset);
-                else
-                    diodeRT{tr,1} = NaN;
-                end
-            end
+        if ~isnan(actualEventTime{tr}.CueOnset)  % if CueOnset event occured
+            % get the min-distance diode change to the CueOnset
+            [~,min_indx] = min(abs(actualEventTime{tr}.CueOnset - diodChangTimBin));
+            % take the diode change time as the correct event time for CueOnset
+            diodEventTime{tr,1}.CueOnset     = diodChangTimBin(min_indx);
+        end
+        % correct and aligne FixationOn
+        if ~isnan(actualEventTime{tr}.FixationOn)
+            [~,min_indx] = min(abs(actualEventTime{tr}.FixationOn - diodChangTimBin));
+            diodEventTime{tr,1}.FixationOn = diodChangTimBin(min_indx);
+        end
+        % correct and aligne CueOffset
+        if ~isnan(actualEventTime{tr}.CueOffset)
+            [~,min_indx] = min(abs(actualEventTime{tr}.CueOffset - diodChangTimBin));
+            diodEventTime{tr,1}.CueOffset    = diodChangTimBin(min_indx);
+        end
+        % correct and aligne TargetOnset
+        if ~isnan(actualEventTime{tr}.TargetOnset)
+            [~,min_indx] = min(abs(actualEventTime{tr}.TargetOnset - diodChangTimBin));
+            diodEventTime{tr,1}.TargetOnset  = diodChangTimBin(min_indx);
+        end
+        % correct and aligne TargetOffset
+        if ~isnan(actualEventTime{tr}.TargetOffset)
+            [~,min_indx] = min(abs(actualEventTime{tr}.TargetOffset(1) - diodChangTimBin));
+            diodEventTime{tr,1}.TargetOffset = diodChangTimBin(min_indx);
+        end
+              
+        % correct reaction time if available
+        if isfield(diodEventTime{tr,1}, 'TargetOnset')
+            diodeRT{tr,1} = reaction_time{tr} - (diodEventTime{tr,1}.TargetOnset - actualEventTime{tr,1}.TargetOnset);
+        else
+            diodeRT{tr,1} = NaN;
+        end
     end
 	clear tr
     
