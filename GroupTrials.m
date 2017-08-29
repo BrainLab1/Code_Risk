@@ -1,3 +1,4 @@
+% last update: 29.08.2017 by Bahareh: new condition added for 'PreTrlEV & PreTrlVar & CurrTrlEV' 
 % last update: 29.08.2017 by Bahareh: new condition added for 'expecter_reward & RewardVariance & Outcome'
 % last update: 28.08.2017 by Bahareh: new condition added for 'expecter_reward & RewardVariance'
 % last update: 20.08.2017 by Bahareh: new condition added for 'PreTrlOutcome & CurrentTrlVar' where successful trials for which the 
@@ -506,6 +507,59 @@ switch grType
             clear rewdCueTrIdx idx
        end
        clear gr
+       
+    case 'PreTrlEV & PreTrlVar & CurrTrlEV' 
+        % each row of the 'allConditions' contains following values -> [PreTrlEV   PreTrlVar  CurrTrlEV] 
+        % in total there are 27 conditions
+        allConditions = [3  0  3   %  -
+                         3  0  6   % | 
+                         3  0  9   %  -
+                         3  1  3   %  -
+                         3  1  6   % | 
+                         3  1  9   %  -
+                         3  4  3   %  -
+                         3  4  6   % | 
+                         3  4  9   %  -
+                         ...
+                         6  0  3   %  -
+                         6  0  6   % | 
+                         6  0  9   %  -
+                         6  1  3   %  -
+                         6  1  6   % | 
+                         6  1  9   %  -
+                         6  4  3   %  -
+                         6  4  6   % | 
+                         6  4  9   %  -                        
+                         ...
+                         9  0  3   %  -
+                         9  0  6   % | 
+                         9  0  9   %  -
+                         9  1  3   %  -
+                         9  1  6   % | 
+                         9  1  9   %  -
+                         9  4  3   %  -
+                         9  4  6   % | 
+                         9  4  9]; %  -                        
+        
+        output = [];
+        eventTable = struct2table(event);
+        idx = cell(27,1);
+        for tr = 2:size(eventTable,1)
+            if (~eventTable.TrialErrorCode(tr) && ~eventTable.TrialErrorCode(tr-1)) % if this trial and the previouse one were successful 
+                currCondi = [eventTable.expected_reward(tr-1) eventTable.RewardVariance(tr-1) eventTable.expected_reward(tr)];    
+                % find which condition/group it is
+                cd = find( ismember(allConditions, currCondi, 'rows') );
+                idx{cd} = [idx{cd}; tr];
+                clear cd currCondi
+            end
+        end
+        clear tr cd currCondi
+
+        for gr = 1: length(idx)
+            output = [output; struct('TrialIdx', idx{gr}, ...
+                                     'Value', allConditions(gr,:), ...
+                                     'GroupingType', grType)];
+        end 
         
   
 end
