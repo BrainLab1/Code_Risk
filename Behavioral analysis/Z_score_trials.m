@@ -17,7 +17,7 @@ switch field_name
         z_scored = [];
         for i = 1:numel(output)
             ind = output(i).TrialIdx;
-            tmp = zscore([totalTrials(ind).RT]);
+            tmp = zscore(log([totalTrials(ind).DiodeReactionTime]));
             z_scored = [z_scored,tmp];
 %             tmp2(ind) = tmp;
         end
