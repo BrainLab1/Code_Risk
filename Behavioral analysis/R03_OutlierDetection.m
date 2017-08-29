@@ -18,7 +18,7 @@ dbstop if error
 % points to the directory where all the preprocessed files are stored.
 main_folder          = 'Z:\'; 
 data_folder          = 'data\'; % 
-original_data_folder = 'Risk\Original Data_Extracted\';
+original_data_folder = 'Risk\Behavior\';
 save_dir             = 'Z:\data\Risk\Behavior\';
 
 %% Read out list of all the files related to this session
@@ -38,44 +38,15 @@ clear i tmp
 Events = [];
 for ses = 1:numel(allFiles) % for each session
     % select the right file
-        sessionFolder = allFiles(ses).name;
-        bhvFileInfo = dir([dataPath sessionFolder '\*.bhv']); 
-        bhvFilePath = [dataPath sessionFolder '\' bhvFileInfo.name];
-        
-        lfpFileInfo    = dir([dataPath sessionFolder '\*.ns2']);   
-        if length(lfpFileInfo) > 1
-            warning(['Multiple NS files in folder ' [dataPath sessionFolder]]);
-            continue;
-        end       
-        lfpFilePath = [dataPath sessionFolder '\' lfpFileInfo.name];
-
-        tmp_cfg                 = [];
-        tmp_cfg.headerformat    = 'blackrock_nsx';
-        tmp_cfg.data_dir        = dataPath;
-        tmp_cfg.trialfun        = 'fieldtrip_trialfun_RiskBhv'; % string with function name, see below (default = 'ft_trialfun_general')
-        tmp_cfg.trialdef.pre    = 1; % time in seconds; this only indicates absolut value, do not use '-'
-        tmp_cfg.trialdef.post   = 1; % time in seconds
-        
-        % Specific config for one session
-        tmp_cfg.headerfile  = lfpFilePath;
-        tmp_cfg.dataset     = lfpFilePath;
-        tmp_cfg.session_dir = sessionFolder;
-        
-        tmp_cfg.trialdef.eventtype  = 'cue';
-        tmp_cfg.trialdef.interval   = [-0.1 1];
-
-        % read ou the data the same way it is done in ReadRiskDataBhv.m
-        new_cfg = ft_definetrial(tmp_cfg);
-        
-        dir_name{ses} = new_cfg.session_dir;
-
-        % convert the event tructure to table
-        eventTable = struct2table(new_cfg.event);
-        eventTable.SessionID = (ses)*ones(size(eventTable,1),1);
-        Events = [Events;eventTable];
-        
-        clear eventTable new_cfg
-
+    sessionFolder = allFiles(ses).name;
+    load([main_folder data_folder original_data_folder sessionFolder])
+    
+    % convert the event tructure to table
+    eventTable = struct2table(new_cfg.event);
+    eventTable.SessionID = (ses)*ones(size(eventTable,1),1);
+    Events = [Events;eventTable];
+    
+    clear eventTable new_cfg
 end
 clear ses
 
@@ -138,11 +109,11 @@ clear outlier_indices outlier_index
 
 for j = 1:length(allFiles)
     trl = find(Events.SessionID == j);
-    load ([save_dir 'Bhv_' dir_name{j} '.mat'])
+    load([main_folder data_folder original_data_folder allFiles(j).name])
     new_cfg.event = table2struct(Events(trl,:));
     new_cfg.event = rmfield(new_cfg.event,'SessionID');
     
-    save ([save_dir 'Bhv_' dir_name{j} '.mat'], 'new_cfg')
+    save([main_folder data_folder original_data_folder allFiles(j).name],'new_cfg')
     clear trl new_cfg
 end
 
