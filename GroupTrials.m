@@ -490,9 +490,9 @@ switch grType
             if ~isnan(outcomeThreshold(gr)) % this is for when reward variance is not zero  
                 switch allConditions(gr,3)
                     case -1 % collect losing trials for this group
-                        idx = rewdCueTrIdx( find(eventTable.TotalRewardTime(rewdCueTrIdx) < outcomeThreshold(gr)) );
+                        idx = rewdCueTrIdx( find(eventTable.TotalRewardTime(rewdCueTrIdx) <= outcomeThreshold(gr)) );
                     case 1  % collect winning trials for this group
-                        idx = rewdCueTrIdx( find(eventTable.TotalRewardTime(rewdCueTrIdx) > outcomeThreshold(gr)) );
+                        idx = rewdCueTrIdx( find(eventTable.TotalRewardTime(rewdCueTrIdx) >= outcomeThreshold(gr)) );
                 end
             else % this is for F3, F6 and F9 cue conditions
                 idx = rewdCueTrIdx;
