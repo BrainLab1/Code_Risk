@@ -29,7 +29,6 @@ colorCode = [  204 204 255  % F3
 monkeyName = 'Mojo';  % 'Moj' or 'Mac'
 groupingCriteria       = 'expecter_reward & RewardVariance' ; % this parameter shows based on what criteria trials are grouped.
 Fs = 1000;   % assume 1K sampling rate
-whichFigUWannaPlot = '5';  % '5' or '6'
 
 %% add path
 addpath(genpath('D:\Code_localGit'))
