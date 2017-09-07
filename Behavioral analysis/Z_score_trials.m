@@ -14,11 +14,12 @@ if strcmp(type,'per_session')
 
 switch field_name
     case 'RT'
-        z_scored = [];
+        z_scored = zeros(length(totalTrials),1);
         for i = 1:numel(output)
             ind = output(i).TrialIdx;
-            tmp = zscore(log([totalTrials(ind).DiodeReactionTime]));
-            z_scored = [z_scored,tmp];
+            tmp = zscore(real(log([totalTrials(ind).DiodeReactionTime])));
+            z_scored(ind) = tmp;
+%             z_scored = [z_scored,tmp];
 %             tmp2(ind) = tmp;
         end
 %         z_scored = tmp2;

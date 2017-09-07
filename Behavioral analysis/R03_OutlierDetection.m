@@ -84,7 +84,7 @@ for i = 1:numel(outlier_indices)
 end
 Events.OutCueOnOffZ2 = zeros(size(Events,1),1);
 Events.OutCueOnOffZ2(outlier_index) = 1;
-clear outlier_indices outlier_index
+clear outlier_indices outlier_index outlierfield
 
 % detection of outliers from Target Acuired to Reward On timing
 outlierfield.trial_target_to_reward = 1;
@@ -94,7 +94,7 @@ for i = 1:numel(outlier_indices)
 end
 Events.OutAqToRwdZ2 = zeros(size(Events,1),1);
 Events.OutAqToRwdZ2(outlier_index) = 1;
-clear outlier_indices outlier_index
+clear outlier_indices outlier_index outlierfield
 
 % detection of outliers from Reaction Time
 outlierfield.trial_reaction_time = 1;
@@ -104,7 +104,7 @@ for i = 1:numel(outlier_indices)
 end
 Events.OutRTZ2 = zeros(size(Events,1),1);
 Events.OutRTZ2(outlier_index) = 1;
-clear outlier_indices outlier_index
+clear outlier_indices outlier_index outlierfield
 
 
 for j = 1:length(allFiles)
