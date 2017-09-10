@@ -44,7 +44,7 @@ clear ses idx
 
 %% Extract and group reaction times
 allSesGroupedData = {};
-allSesSuccRT = cell(numel(allFiles),1);  % collected reaction times from successful trials of each session
+allSesSuccTransformRT = cell(numel(allFiles),1);
 
 for ses = 1:numel(allFiles) % for each session
     load ([dataPath allFiles(ses).name])
@@ -74,14 +74,12 @@ for ses = 1:numel(allFiles) % for each session
         for tr = 1:length(output(gr).SuccessTrlIdx)
             trIdx = output(gr).SuccessTrlIdx(tr);
             % read out the reaction time for this successful trial of this group
-            tempRT = [tempRT; eventTable.DiodeReactionTime(trIdx)];
+            tempRT = [tempRT; eventTable.z_log_RT(trIdx)];
             clear trIdx
         end
-        % if there are 0 RTs, add eps to them to prevent -Inf values after  log() function
-        tempRT(tempRT == 0) = eps;
         % add diode reaction times to the output
-        output(gr).SuccessRT   = tempRT;
-        allSesSuccRT(ses) = {[allSesSuccRT{ses}; output(gr).SuccessRT]};
+        output(gr).TransformSuccRT   = tempRT;
+        allSesSuccTransformRT{ses} = [allSesSuccTransformRT{ses}; tempRT];
         clear  tempRT tr 
     end
         
@@ -91,29 +89,6 @@ for ses = 1:numel(allFiles) % for each session
     clear gr output eventTable new_cfg tmp_cfg temp 
 end
 clear ses
-
-%% take the zscore(log(RT)), remove outliers
-allSesSuccTransformRT = cell(numel(allFiles),1);  % transformed reaction times from successful trials of each session
-for ses = 1:length(allSesSuccRT)
-    % transform reaction times
-    allSesSuccTransformRT{ses} = zscore(log(allSesSuccRT{ses}));
-    
-    trlPerGrp = []; % number of successful trials per group for this session
-    tmp = [];
-    for gr = 1:length(allSesGroupedData{ses})
-        trlPerGrp(gr,1) = length(allSesGroupedData{ses}(gr).SuccessRT);
-        tmp = [tmp; allSesGroupedData{ses}(gr).SuccessRT]; % collect reaction times in order of groups
-    end
-    clear gr
-    % transform the collected reaction times for this session
-    tmp = zscore(log(tmp));
-    tmp = mat2cell(tmp, trlPerGrp, 1);
-    % add the transformed RTs for to each group
-    for gr = 1:length(allSesGroupedData{ses})
-        allSesGroupedData{ses}(gr).TransformSuccRT = tmp{gr};
-    end
-    clear tmp
-end
 
 %% plot distribution of reaction times from all sessions
 figure('Name', monkeyName)
@@ -136,7 +111,7 @@ clear aa counts
 
 %% RT (cong-ic trials), separate by EV (but collapse across variances) and use a 1-way KW analysis 
 meanRT = [];  % groups ->  [[3 1], [6 1], [9 1], [3 -1], [6 -1], [9 -1]]
-for ses = 1:length(allSesSuccRT)
+for ses = 1:length(allSesGroupedData)
     for gr = 1:length(allSesGroupedData{ses})
         meanRT(ses, gr) = mean(allSesGroupedData{ses}(gr).TransformSuccRT);
     end
@@ -150,7 +125,7 @@ deltaRT = meanRT(:,1:3) - meanRT(:,4:6);
 figure, hold on, box on
 xlabel('expected reward')
 ylabel([{'congRT - incongRT'},{'+/- SEM'}])
-title([monkeyName ', ' num2str(length(allSesSuccRT)) ' sessions'])
+title([monkeyName ', ' num2str(length(allSesGroupedData)) ' sessions'])
 errorbar(1:3, mean(deltaRT), std(deltaRT)/sqrt(size(deltaRT,1)), 'LineWidth', 2)
 set(gca, 'XLim', [0 4], 'XTick', [1:3], 'XTickLabel', [{'3'},{'6'},{'9'}])
 [pKruskalWallis,tbl,stats] = kruskalwallis(deltaRT,[],'off');
