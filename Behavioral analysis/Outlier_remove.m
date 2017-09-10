@@ -144,7 +144,7 @@ for i = 1:2  % '1' for Mojo and '2' for MacDuff
   
     if isfield(outlierfield,'trial_cueonset_to_cueoffset')
         for j = 1:numel(monkey_indx)
-            data(j) = totalTrials(monkey_indx(j)).ActualEventTime.CueOffset - totalTrials(monkey_indx(j)).ActualEventTime.CueOnset;
+            data(j) = totalTrials(monkey_indx(j)).DiodeEventTime.CueOffset - totalTrials(monkey_indx(j)).DiodeEventTime.CueOnset;
         end
         outlier_indices14 = monkey_indx(find(abs(zscore(data))>zscore_thr));
     else
