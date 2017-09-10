@@ -54,7 +54,7 @@ else
  
 switch field_name
     case 'RT'
-        z_scored = zscore([totalTrials.RT]);
+        z_scored = zscore([totalTrials.DiodeReactionTime]);
     case 'lickData'
         switch option.alignment
             case 'Cue'
