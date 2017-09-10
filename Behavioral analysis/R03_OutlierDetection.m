@@ -1,4 +1,6 @@
 
+% last update: by Saeed; a new field named zscoredRT is added to the Event
+% structure which saves the z_scored values of reaction times after outlier detection.
 % last update: by Saeed; detection of RT outliers with zscore of log is
 % added
 % last update: Saeed; some bugs are fixed and outliers are named according
@@ -78,7 +80,7 @@ c = Events(indx,:);% table of successful trials
 
 % detection of outliers from CueOn to CueOff timing
 outlierfield.trial_cueonset_to_cueoffset = 1;
-[ ~,outlier_indices ] = Outlier_remove( table2struct(c),outlierfield );
+[ ~,outlier_indices,~ ] = Outlier_remove( table2struct(c),outlierfield );
 for i = 1:numel(outlier_indices)
     outlier_index(i) = indx(outlier_indices(i));
 end
@@ -88,7 +90,7 @@ clear outlier_indices outlier_index outlierfield
 
 % detection of outliers from Target Acuired to Reward On timing
 outlierfield.trial_target_to_reward = 1;
-[ ~,outlier_indices ] = Outlier_remove( table2struct(c),outlierfield );
+[ ~,outlier_indices,~ ] = Outlier_remove( table2struct(c),outlierfield );
 for i = 1:numel(outlier_indices)
     outlier_index(i) = indx(outlier_indices(i));
 end
@@ -98,10 +100,12 @@ clear outlier_indices outlier_index outlierfield
 
 % detection of outliers from Reaction Time
 outlierfield.trial_reaction_time = 1;
-[ ~,outlier_indices ] = Outlier_remove( table2struct(c),outlierfield );
+[ ~,outlier_indices,zscored_RT ] = Outlier_remove( table2struct(c),outlierfield );
 for i = 1:numel(outlier_indices)
     outlier_index(i) = indx(outlier_indices(i));
 end
+Events.zscoredRT = NaN(size(Events,1),1);
+Events.zscoredRT(indx) = zscored_RT;
 Events.OutRTZ2 = zeros(size(Events,1),1);
 Events.OutRTZ2(outlier_index) = 1;
 clear outlier_indices outlier_index outlierfield

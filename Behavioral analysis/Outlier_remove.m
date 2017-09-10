@@ -1,9 +1,11 @@
-function [ totalTrials_new,outlier_indices ] = Outlier_remove( totalTrials,outlierfield )
+function [ totalTrials_new,outlier_indices,zscored_RT ] = Outlier_remove( totalTrials,outlierfield )
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 
 zscore_thr = 2;
 outlier_indices = [];
+
+zscored_RT = zeros(length(totalTrials),1);
 
 for i = 1:2  % '1' for Mojo and '2' for MacDuff
     monkey_indx = find([totalTrials.subjectID] == i);
@@ -193,6 +195,7 @@ for i = 1:2  % '1' for Mojo and '2' for MacDuff
     if isfield(outlierfield,'trial_reaction_time')
         [ z_scored ] = Z_score_trials( totalTrials(monkey_indx),'per_session','RT',0 );
         outlier_indices19 = monkey_indx(find(abs(z_scored)>zscore_thr));
+        zscored_RT(monkey_indx) = z_scored;
     else
         outlier_indices19 = [];
     end
@@ -204,7 +207,7 @@ outlier_indices = [outlier_indices,unique([outlier_indices1,outlier_indices2,...
     outlier_indices15,outlier_indices16,outlier_indices17,outlier_indices18,...
     outlier_indices19])];
 
-clearvars -except outlier_indices zscore_thr totalTrials outlierfield
+clearvars -except outlier_indices zscore_thr totalTrials outlierfield zscored_RT
  
 end
 
