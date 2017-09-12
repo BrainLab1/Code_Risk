@@ -301,7 +301,16 @@ actualIndx = num2cell((1:numel(subjectID))');
 num2cell(ones(size(trl,1),1));
 
 %% pre-trial information
-for tr = 2: length(bhv_file.ConditionNumber)  % for each trial
+    preTrial{1,1}.type            = NaN;
+    preTrial{1,1}.ActualTrialIdx  = NaN;
+    preTrial{1,1}.TrialErrorCode  = NaN;
+    preTrial{1,1}.expected_reward = NaN;
+    preTrial{1,1}.RewardVariance  = NaN;
+    preTrial{1,1}.TotalRewardTime = NaN;
+    preTrial{1,1}.cue_pos         = NaN;
+    preTrial{1,1}.target_pos      = NaN;
+
+    for tr = 2: length(bhv_file.ConditionNumber)  % for each trial
     preTrial{tr,1}.type            = conditions{tr-1};
     preTrial{tr,1}.ActualTrialIdx  = actualIndx{tr-1};
     preTrial{tr,1}.TrialErrorCode  = trial_error_code{tr-1};

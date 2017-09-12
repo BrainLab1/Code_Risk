@@ -31,7 +31,7 @@ tmp = [];
 for i = 1:length(allFiles)
     if  numel(allFiles(i).name) < 3
         tmp = [tmp; i];
-    elseif strcmp(original_data_folder,'Risk\Primary Filtered LFP Data\') && strcmp(allFiles(i).name(end-11:end-4),'(reward)')
+    elseif strcmp(original_data_folder,'Risk\Primary Filtered LFP Data\') && strcmp(allFiles(i).name(end-9:end-4),'(cue)')
         tmp = [tmp; i];
     end
 end
@@ -115,7 +115,7 @@ for i = 1:numel(outlier_indices)
     outlier_index(i) = indx(outlier_indices(i));
 end
 
-if strcmr(original_data_folder,'Risk\Behavior\')
+if strcmp(original_data_folder,'Risk\Behavior\')
     tmp = rmfield(table2struct(Events),'zscoredRT');
     Events  = struct2table(tmp);
     clear tmp
@@ -141,15 +141,18 @@ clear outlier_indices outlier_index outlierfield
             end
 
         case 'Risk\Primary Filtered LFP Data\'
-            for j = 1:length(allFiles)
+            for j = 2:length(allFiles)
                 trl = find(Events.SessionID == j);
                 load([main_folder data_folder original_data_folder allFiles(j).name])
-                data.cfg.event.OutCueOnOffZ2 = num2cell(Events.OutCueOnOffZ2(trl,:));
-                new_cfg.event = table2struct(Events(trl,:));
-                new_cfg.event = rmfield(new_cfg.event,'SessionID');
+                T = struct2table(data.cfg.event) ;
+                T.OutCueOnOffZ2 = Events.OutCueOnOffZ2(trl,:);
+                T.OutAqToRwdZ2 = Events.OutAqToRwdZ2(trl,:);
+                T.z_log_RT = Events.z_log_RT(trl,:);
+                T.OutRTZ2 = Events.OutRTZ2(trl,:);
+                data.cfg.event = table2struct(T);
     
-                save([main_folder data_folder original_data_folder allFiles(j).name],'new_cfg')
-                clear trl new_cfg
+                save([main_folder data_folder original_data_folder allFiles(j).name],'data')
+                clear trl data T
             end
 
             
