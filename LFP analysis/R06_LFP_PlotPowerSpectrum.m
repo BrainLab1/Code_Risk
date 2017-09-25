@@ -306,13 +306,15 @@ end
 
 %% Plot averaged power spectrum for each arra (averaged over electrode within the session) across sessions
 close all
-   
+colorScaleElecAve1 = [-0.5 1];
+colorScaleElecAve2 = [-0.5 1];
+
 for gr = 1:numGroups
     F = figure('Name', [groupingCriteria ' ' out{gr} ', Ave across sessions'], 'Position',  scr);
     
     % extract current group power for all sessions
-    elecAveArray1 = cell2mat(Elec_mean_array1{gr,:}); % size = [ (numFreq) x (numTime x numSessions) ]
-    elecAveArray2 = cell2mat(Elec_mean_array2{gr,:}); % size = [ (numFreq) x (numTime x numSessions) ]
+    elecAveArray1 = cell2mat(Elec_mean_array1(gr,:)); % size = [ (numFreq) x (numTime x numSessions) ]
+    elecAveArray2 = cell2mat(Elec_mean_array2(gr,:)); % size = [ (numFreq) x (numTime x numSessions) ]
     
     % take the averaged power across sessions for the two arrays
     sesAveArray1 = squeeze( mean(reshape(elecAveArray1, size(elecAveArray1,1), length(freq.time), []), 3) );
