@@ -1,4 +1,6 @@
 
+% last modified by Bahareh; 02.10.2017; there was an error for assigning electrode location for some sessions of Mojo when channels were named
+%      elec#-#, which was fixed. session power spectrums which were plotted before this date were affected by the error
 % last modified: Saeed; 16.09.2017
 % 13.09.2017 Saeed
 
@@ -6,18 +8,13 @@ clear
 close all
 clc
 
-%%
-
-Monkey            = 'Mojo';
+%% set some parameters
+Monkey            = 'MacDuff';
 groupingCriteria  = 'expected_reward';
-
 num_ch = 96;
 
 %%
-
 if strcmp(Monkey,'MacDuff')
-    % we have the channel numbers (not the electrode numbers)
-    [ Array1,Array2 ] = electrodepinoutMacDuff('chan');% Array1 is anterior and Array2 is posterior
     plt_row = 10;
     plt_col = 5;
     main_folder   = 'Z:\';
@@ -28,8 +25,6 @@ if strcmp(Monkey,'MacDuff')
     color_axis = [-0.6,1.8];
 
 elseif strcmp(Monkey,'Mojo')
-    % we have the channel numbers (not the electrode numbers)
-    [ Array1,Array2 ] = electrodepinoutMojo('chan');% Array1 is anterior and Array2 is posterior
     plt_row = 7;
     plt_col = 7;
     main_folder   = 'F:\';
@@ -52,20 +47,24 @@ tmp_bhv_folder_list = dir(['Z:\', 'data\Risk\', bhv_data_dir]);
 all_bhv_folder_names = {tmp_bhv_folder_list.name};
 all_bhv_folder_names(1:2) = [];
 
-% file_names = all_file_names(~cellfun(@isempty, strfind(all_file_names, Alignment)));
 all_bhv_folder_names = all_bhv_folder_names(~cellfun(@isempty, strfind(all_bhv_folder_names, Monkey)));          
-ses_num = 0;
 if strcmp(groupingCriteria,'All trials')
-    Ses_sum1 = zeros(47,1501*48);
-    Ses_sum2 = zeros(47,1501*48);
+  % here is what the numbers mean: 47 is numOfFreqBands; 1501 is numOfTimeStamps; 48 is numOfElectrodsInEachArray  
+    Ses_sum1 = zeros(47,1501*48); % for array1 (anterior)
+    Ses_sum2 = zeros(47,1501*48); % for array2 (posterior)
 else
-    Ses_sum1 = zeros(47*3,1501*48);
-    Ses_sum2 = zeros(47*3,1501*48);
+  % here is what the numbers mean: 47 is numOfFreqBands; 3 is numOfGroups for groupingCriteria  = 'expected_reward';
+  % 1501 is numOfTimeStamps; 48 is numOfElectrodsInEachArray  
+    Ses_sum1 = zeros(47*3,1501*48); % for array1 (anterior)
+    Ses_sum2 = zeros(47*3,1501*48); % for array2 (posterior)
 end
 
+ses_num = 0;
 for ses = 1:length(all_bhv_folder_names) 
+    
+    % read out all the file names for channels of this session
     file_names = all_freq_file_names(~cellfun(@isempty, strfind(all_freq_file_names, all_bhv_folder_names{ses}(5:end-4))));
-    if isempty(file_names) || ~isempty(strfind(file_names{1},'2015_01_16'))
+    if isempty(file_names) || ~isempty(strfind(file_names{1},'2015_01_16')) % ?????????????????? what is wron with this particular date??????
         continue
     end
     ses_num = ses_num+1;
@@ -74,11 +73,12 @@ for ses = 1:length(all_bhv_folder_names)
         elec_day_array1 = cell(1,96);
         elec_day_array2 = cell(1,96);
     else
+      % 3 represents number of groups for groupingCriteria of 'expected_reward'. it has to change if the number of groups chahge
         elec_day_array1 = cell(3,96);
-        elec_day_array2 = cell(3,96);
+        elec_day_array2 = cell(3,96);  
     end
     
-	% collect the power spectrum from all channels ib thi session, separated by array
+	% collect the power spectrum from all channels in this session, separated by array
     ch = 0;
     while ch <length(file_names)
         ch = ch+1;
@@ -86,58 +86,70 @@ for ses = 1:length(all_bhv_folder_names)
         % load variable freq; size(squeeze(freq.powspctrm)) is [numTrials, numFreqBands, numTimeStamps] 
         load([main_folder, data_folder, freq_data_dir, file_names{ch}]);
         
-        if strcmp(Monkey,'Mojo')
-            if isempty(strfind(freq.label{1},'elec'))
-                true_ch_num(ch) = str2double(freq.label{1}(5:end));
-                if ismember(true_ch_num(ch),Array1)
-                    arrayIdx        = num2str(1);  % elec1:Anterior; elec2:Posterior
-                else
-                    arrayIdx        = num2str(2);
+        % find the location of the loaded channel on the arrays
+        eval(['[Array1, Array2] = electrodepinout' Monkey '(freq.label{1}(1:4));']) 
+        
+        % find which array this channel belongs to
+        switch freq.label{1}(1:4)
+            case 'chan'
+                if ismember(ch, Array1)
+                    arrayIdx = 1;
+                else if smember(ch, Array2)
+                        arrayIdx = 2;
+                    else
+                        udisplay('There is an error! This channels belong to neither of the arrays!!!')
+                        break
+                    end
                 end
-            else
-                arrayIdx        = num2str(freq.label{1}(5));  % elec1:Anterior; elec2:Posterior
-                true_ch_num(ch) = str2double(file_names{ch}(strfind(file_names{ch},'ch')+2:strfind(file_names{ch},'.mat')-1));
-            end
-            
-        else
-            arrayIdx        = num2str(freq.label{1}(5));  % elec1:Anterior; elec2:Posterior
-            true_ch_num(ch) = str2double(file_names{ch}(strfind(file_names{ch},'ch')+2:strfind(file_names{ch},'.mat')-1));
-        end
+                eval(['plot_indx(2,ch)   = find(' 'Array' num2str(arrayIdx) ' == ch);']);
+                
+            case 'elec'
+                k = strfind(freq.label{1},'-');
+                if ismember(str2num(freq.label{1}(k+1:end)), Array1)
+                    arrayIdx = 1;
+                else if ismember(str2num(freq.label{1}(k+1:end)), Array2)
+                        arrayIdx = 2;
+                    else
+                        udisplay('There is an error! This channels belong to neither of the arrays!!!')
+                        break
+                    end
+                end
+                eval(['plot_indx(2,ch)   = find(' 'Array' num2str(arrayIdx) ' == str2num(freq.label{1}(k+1:end)));']);
+                clear k
+       end
         
-        plot_indx(1,ch) = str2double(arrayIdx);
-        eval(['plot_indx(2,ch)   = find(' 'Array' arrayIdx ' == true_ch_num(ch));']);
-
-        
+        % assign array index to this channel
+        plot_indx(1,ch) = arrayIdx;
+               
         % change order of freq.powspctrm dimensions and change it to [numFreqBands, numTimeStamps, numTrials]
         M0 = permute(squeeze(freq.powspctrm(:,1,:,:)), [2,3,1]);
         % turn the M0 matrix to a 2D matrix of size [numFreqBands (numTrials*numTimaStamps)]
         M = reshape(M0, size(M0,1), []);
         % zscore ezch frequency band separately 
         Z_M = (M - repmat(nanmean(M,2),1,size(M,2)))./repmat(nanstd(M,1,2),1,size(M,2));
-%         Z_M = zscore(M')';
         % reshape the zscored data into a 3D matrix of size [numFreqBands, numTimeStamps, numTrials]
         Z_freq_powspctrm = reshape(Z_M,size(M0));
       
         switch groupingCriteria
             case 'All trials'
-                eval(['elec_day_array' arrayIdx '{1,ch} = squeeze(mean(Z_freq_powspctrm(:,:,:),3));'])
+                eval(['elec_day_array' num2str(arrayIdx) '{1,ch} = squeeze(mean(Z_freq_powspctrm(:,:,:),3));'])
             otherwise
                 event = recursive_read(freq,'event');
                 [output] = GroupTrials(event, groupingCriteria );% 'event' only includes successful trials, so it is not necessary to remove error trials
                 for gr = 1:numel(output)
                     idx = output(gr).TrialIdx;                    
-                    eval(['elec_day_array' arrayIdx '{gr,ch} = squeeze(nanmean(Z_freq_powspctrm(:,:,idx),3));'])
+                    eval(['elec_day_array' num2str(arrayIdx) '{gr,ch} = squeeze(nanmean(Z_freq_powspctrm(:,:,idx),3));'])
                 end
                 clear gr output event
         end  
-        clear Z_freq_powspctrm Z_M M M0
+        clear Z_freq_powspctrm Z_M M M0 arrayIdx
         
     end
     
                 
     scr = get(0,'screensize');
     
-	% Now plot --------------------------------------------------------------------------------------------------------------
+	% Now plot the power spectrun for current session -----------------------------------------------------------------------
     switch groupingCriteria
         case 'All trials'
             numGroups = 1;
@@ -169,7 +181,6 @@ for ses = 1:length(all_bhv_folder_names)
         for ch = 1:num_ch
             ch
             eval(['figure(F' num2str(plot_indx(1,ch)) ')'])
-%           title([num2str(true_ch_num(ch))])
             subplot(plt_row,plt_col,plot_indx(2,ch))
             eval(['H' num2str(plot_indx(1,ch)) ' = mesh(elec_day_array' num2str(plot_indx(1,ch)) '{gr,ch});']);
             colormap('jet'),view([0 90]), axis('tight')
