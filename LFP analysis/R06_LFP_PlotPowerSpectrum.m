@@ -9,7 +9,7 @@ close all
 clc
 
 %% set some parameters
-Monkey            = 'MacDuff';
+Monkey            = 'Mojo';
 groupingCriteria  = 'expected_reward';
 num_ch = 96;
 
@@ -20,7 +20,7 @@ if strcmp(Monkey,'MacDuff')
     main_folder   = 'Z:\';
     data_folder   = 'data\Risk\';
     bhv_data_dir  = 'Behavior\';
-    freq_data_dir = 'Frequency Data\';
+    freq_data_dir = 'Electrode-day power spectrum\MacDuff\';
     save_plot_dir = 'D:\shared\New_TimeFrequency plot\';
     color_axis = [-0.6,1.8];
 
@@ -30,7 +30,7 @@ elseif strcmp(Monkey,'Mojo')
     main_folder   = 'F:\';
     data_folder   = '';
     bhv_data_dir  = 'Behavior\';
-    freq_data_dir = 'Frequency Data\';
+    freq_data_dir = 'Electrode-day power spectrum\Mojo\';
     save_plot_dir = 'D:\shared\New_TimeFrequency plot\';
     color_axis = [-0.5,0.7];
 end
@@ -64,7 +64,7 @@ for ses = 1:length(all_bhv_folder_names)
     
     % read out all the file names for channels of this session
     file_names = all_freq_file_names(~cellfun(@isempty, strfind(all_freq_file_names, all_bhv_folder_names{ses}(5:end-4))));
-    if isempty(file_names) || ~isempty(strfind(file_names{1},'2015_01_16')) % ?????????????????? what is wron with this particular date??????
+    if isempty(file_names)
         continue
     end
     ses_num = ses_num+1;
