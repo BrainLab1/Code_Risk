@@ -56,7 +56,7 @@ for i = 1: length(file_names) % for each session
             freq.powspctrm(thisChBadTrls, 1, :, :) = nan( length(thisChBadTrls), size(freq.powspctrm,3), size(freq.powspctrm,4) );
             
             % store the power spectrum of the current channel on the hard drive
-            save(['F:\Electrode-day power spectrum\Mojo\',file_names{i}(1:end-4),' ch',num2str(ch)],'freq')
+            save(['F:\Electrode-day power spectrum\' Monkey '\',file_names{i}(1:end-4),' ch',num2str(ch)],'freq')
         
             % free some memory
             clear freq event thisChBadTrls
