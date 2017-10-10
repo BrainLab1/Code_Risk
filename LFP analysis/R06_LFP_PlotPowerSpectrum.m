@@ -10,7 +10,7 @@ clc
 
 %% set some parameters
 Monkey            = 'Mojo';
-groupingCriteria  = 'Variance';
+groupingCriteria  = 'expected_reward';
 num_ch = 96;
 
 %%
@@ -69,6 +69,14 @@ for ses = 1:length(all_bhv_folder_names)
     if isempty(file_names)
         continue
     end
+    
+    % sort the file names based on the channel lable index (i.e., X in the 'chX' of the freq. file name !!)
+    a1 = cellfun(@(x)    str2double(x(max(strfind(x,'ch'))+2 : min(strfind(x,'.'))-1)), file_names);
+    [~,sortedIdx]=sort(a1);
+    file_names = file_names(sortedIdx);
+    clear a1 sortedIdx
+    
+    
     ses_num = ses_num+1;
 
     if strcmp(groupingCriteria,'All trials')
@@ -151,105 +159,105 @@ for ses = 1:length(all_bhv_folder_names)
     
                 
     scr = get(0,'screensize');
-%     
-% 	% Now plot the power spectrun for current session -----------------------------------------------------------------------
-%     switch groupingCriteria
-%         case 'All trials'
-%             numGroups = 1;
-%         otherwise
-%             numGroups = size(elec_day_array1,1);
-%     end
-%     
-%     % make a variable for naming the figures
-%     dummy = squeeze(nanmean(reshape(cell2mat(elec_day_array1), numGroups*length(freq.freq), length(freq.time), []), 3));
-%     colorScaleElecAve1 = [min(dummy(:)) max(dummy(:))];
-%     clear dummy 
-%     dummy = squeeze(nanmean(reshape(cell2mat(elec_day_array2), numGroups*length(freq.freq), length(freq.time), []), 3));
-%     colorScaleElecAve2 = [min(dummy(:)) max(dummy(:))];
-%     clear dummy 
-%     
-%     switch groupingCriteria
-%         case 'expected_reward'
-%             out = {'3','6','9'};
-%         case 'Variance'
-%             out = {'0','1','4'};
-%         case 'All trials'
-%             out = ' ' ;
-%     end
-%     
-%     for gr = 1:numGroups
-% 	    % plot the power spectrums, for each channel separately, map the channel location on the array 
-%         F1 = figure('Name', [groupingCriteria ' ' out{gr} ', Array Position:' Array_pos{1}], 'Position',  scr);
-%         F2 = figure('Name', [groupingCriteria ' ' out{gr} ', Array position:' Array_pos{2}], 'Position',  scr);
-%         for ch = 1:num_ch
-%             ch
-%             eval(['figure(F' num2str(plot_indx(1,ch)) ')'])
-%             subplot(plt_row,plt_col,plot_indx(2,ch))
-%             eval(['H' num2str(plot_indx(1,ch)) ' = mesh(elec_day_array' num2str(plot_indx(1,ch)) '{gr,ch});']);
-%             colormap('jet'),view([0 90]), axis('tight')
-%             eval(['H' num2str(plot_indx(1,ch)) '.XData = freq.time;'])
-%             eval(['H' num2str(plot_indx(1,ch)) '.YData = freq.freq;'])
-%             eval(['yData = H' num2str(plot_indx(1,ch)) '.YData']);
-%             line([0,0],[yData(1),yData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
-%             text(-0.05, 10, 2, 'CueOn', 'Rotation', 90, 'FontSize', 8, 'Color', [1 1 1])
-%             line([0.4,0.4],[yData(1),yData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
-%             text(0.35, 10, 2, 'CueOff', 'Rotation', 90, 'FontSize', 8, 'Color', [1 1 1])
-%             line([0.8,0.8],[yData(1),yData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
-%             text(0.75, 10, 2, 'TargetOn', 'Rotation', 90, 'FontSize', 8, 'Color', [1 1 1])               
-%             caxis(color_axis)
-%             set(gca, 'XTick', [], 'YTick', [4 10 20 30 40], 'FontSize', 6)
-%             clear H* yData
-%         end
-% 		
-% 	    % Store the figures on the hard drive
-%         saveas(F1, [save_plot_dir, all_bhv_folder_names{ses}(5:end-4) ' - ' Array_pos{1} ' - ' groupingCriteria ' ' out{gr} '.jpg'])
-%         saveas(F2, [save_plot_dir, all_bhv_folder_names{ses}(5:end-4) ' - ' Array_pos{2} ' - ' groupingCriteria ' ' out{gr} '.jpg'])
-%         close all
-%         
-%     	% For the current session, plot averaged power spectrum across electrodes on each array
-%         F = figure('Name', [groupingCriteria ' ' out{gr}']);  
-%         % ------ plot Array 1 -------
-%         subplot(1,2,1), hold on
-%         title(['Array Position:' Array_pos{1}])
-%         Elec_mean_array1{gr,ses} = squeeze(nanmean(reshape(cell2mat(elec_day_array1(gr,:)), numel(freq.freq), length(freq.time), []), 3));% mean across electrodes
-%         H3 = mesh(Elec_mean_array1{gr,ses});
-%         colormap('jet'), view([0 90]), axis('tight')
-%         H3.XData = freq.time;
-%         H3.YData = freq.freq;
-%         line([0,0],[H3.YData(1),H3.YData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
-%         text(-0.05, 30, 2, 'CueOn', 'Rotation', 90, 'FontSize', 14, 'Color', [1 1 1])
-%         line([0.4,0.4],[H3.YData(1),H3.YData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
-%         text(0.35, 30, 2, 'CueOff', 'Rotation', 90, 'FontSize', 14, 'Color', [1 1 1])
-%         line([0.8,0.8],[H3.YData(1),H3.YData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
-%         text(0.75, 30, 2, 'TargetOn', 'Rotation', 90, 'FontSize', 14, 'Color', [1 1 1])               
-%         xlabel('Time(sec)'), ylabel('Frequency(Hz)')
-%         caxis(colorScaleElecAve1)
-%         set(gca, 'XTick', [0 0.4 0.8], 'YTick', [4 10 20 30 40], 'FontSize', 10, 'PlotBoxAspectRatio', [1 1.1 1])
-%         
-%         % ------ plot Array 2 -------
-%         Elec_mean_array2{gr,ses} = squeeze(nanmean(reshape(cell2mat(elec_day_array2(gr,:)),numel(freq.freq),length(freq.time),[]),3));% mean across electrodes
-%         subplot(1,2,2), hold on
-%         title(['Array Position:' Array_pos{2}])
-%         H4 = mesh(Elec_mean_array2{gr,ses});
-%         colormap('jet'), view([0 90]), axis('tight')
-%         H4.XData = freq.time;
-%         H4.YData = freq.freq;
-%         line([0,0],[H4.YData(1),H4.YData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
-%         text(-0.05, 30, 2, 'CueOn', 'Rotation', 90, 'FontSize', 14, 'Color', [1 1 1])
-%         line([0.4,0.4],[H4.YData(1),H4.YData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
-%         text(0.35, 30, 2, 'CueOff', 'Rotation', 90, 'FontSize', 14, 'Color', [1 1 1])
-%         line([0.8,0.8],[H4.YData(1),H4.YData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
-%         text(0.75, 30, 2, 'TargetOn', 'Rotation', 90, 'FontSize', 14, 'Color', [1 1 1])               
-%         xlabel('Time(sec)'), ylabel('Frequency(Hz)')
-%         caxis(colorScaleElecAve2)
-%         set(gca, 'XTick', [0 0.4 0.8], 'YTick', [4 10 20 30 40], 'FontSize', 10, 'PlotBoxAspectRatio', [1 1.1 1])
-% 
-%         % Save the figure on the hard drive
-%         saveas(F,[save_plot_dir,all_bhv_folder_names{ses}(5:end-4) ' - '  groupingCriteria,' ' out{gr} ' -ElectrodeAveraged','.jpg'])
-%         clear H3 H4 F
-%         close all
-%     end
-%     clear colorScaleElecAve1 colorScaleElecAve2
+    
+	% Now plot the power spectrun for current session -----------------------------------------------------------------------
+    switch groupingCriteria
+        case 'All trials'
+            numGroups = 1;
+        otherwise
+            numGroups = size(elec_day_array1,1);
+    end
+    
+    % make a variable for naming the figures
+    dummy = squeeze(nanmean(reshape(cell2mat(elec_day_array1), numGroups*length(freq.freq), length(freq.time), []), 3));
+    colorScaleElecAve1 = [min(dummy(:)) max(dummy(:))];
+    clear dummy 
+    dummy = squeeze(nanmean(reshape(cell2mat(elec_day_array2), numGroups*length(freq.freq), length(freq.time), []), 3));
+    colorScaleElecAve2 = [min(dummy(:)) max(dummy(:))];
+    clear dummy 
+    
+    switch groupingCriteria
+        case 'expected_reward'
+            out = {'3','6','9'};
+        case 'Variance'
+            out = {'0','1','4'};
+        case 'All trials'
+            out = ' ' ;
+    end
+    
+    for gr = 1:numGroups
+	    % plot the power spectrums, for each channel separately, map the channel location on the array 
+        F1 = figure('Name', [groupingCriteria ' ' out{gr} ', Array Position:' Array_pos{1}], 'Position',  scr);
+        F2 = figure('Name', [groupingCriteria ' ' out{gr} ', Array position:' Array_pos{2}], 'Position',  scr);
+        for ch = 1:num_ch
+            ch
+            eval(['figure(F' num2str(plot_indx(1,ch)) ')'])
+            subplot(plt_row,plt_col,plot_indx(2,ch))
+            eval(['H' num2str(plot_indx(1,ch)) ' = mesh(elec_day_array' num2str(plot_indx(1,ch)) '{gr,ch});']);
+            colormap('jet'),view([0 90]), axis('tight')
+            eval(['H' num2str(plot_indx(1,ch)) '.XData = freq.time;'])
+            eval(['H' num2str(plot_indx(1,ch)) '.YData = freq.freq;'])
+            eval(['yData = H' num2str(plot_indx(1,ch)) '.YData']);
+            line([0,0],[yData(1),yData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
+            text(-0.05, 10, 2, 'CueOn', 'Rotation', 90, 'FontSize', 8, 'Color', [1 1 1])
+            line([0.4,0.4],[yData(1),yData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
+            text(0.35, 10, 2, 'CueOff', 'Rotation', 90, 'FontSize', 8, 'Color', [1 1 1])
+            line([0.8,0.8],[yData(1),yData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
+            text(0.75, 10, 2, 'TargetOn', 'Rotation', 90, 'FontSize', 8, 'Color', [1 1 1])               
+            caxis(color_axis)
+            set(gca, 'XTick', [], 'YTick', [4 10 20 30 40], 'FontSize', 6)
+            clear H* yData
+        end
+		
+	    % Store the figures on the hard drive
+        saveas(F1, [save_plot_dir, all_bhv_folder_names{ses}(5:end-4) ' - ' Array_pos{1} ' - ' groupingCriteria ' ' out{gr} '.jpg'])
+        saveas(F2, [save_plot_dir, all_bhv_folder_names{ses}(5:end-4) ' - ' Array_pos{2} ' - ' groupingCriteria ' ' out{gr} '.jpg'])
+        close all
+        
+    	% For the current session, plot averaged power spectrum across electrodes on each array
+        F = figure('Name', [groupingCriteria ' ' out{gr}']);  
+        % ------ plot Array 1 -------
+        subplot(1,2,1), hold on
+        title(['Array Position:' Array_pos{1}])
+        Elec_mean_array1{gr,ses} = squeeze(nanmean(reshape(cell2mat(elec_day_array1(gr,:)), numel(freq.freq), length(freq.time), []), 3));% mean across electrodes
+        H3 = mesh(Elec_mean_array1{gr,ses});
+        colormap('jet'), view([0 90]), axis('tight')
+        H3.XData = freq.time;
+        H3.YData = freq.freq;
+        line([0,0],[H3.YData(1),H3.YData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
+        text(-0.05, 30, 2, 'CueOn', 'Rotation', 90, 'FontSize', 14, 'Color', [1 1 1])
+        line([0.4,0.4],[H3.YData(1),H3.YData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
+        text(0.35, 30, 2, 'CueOff', 'Rotation', 90, 'FontSize', 14, 'Color', [1 1 1])
+        line([0.8,0.8],[H3.YData(1),H3.YData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
+        text(0.75, 30, 2, 'TargetOn', 'Rotation', 90, 'FontSize', 14, 'Color', [1 1 1])               
+        xlabel('Time(sec)'), ylabel('Frequency(Hz)')
+        caxis(colorScaleElecAve1)
+        set(gca, 'XTick', [0 0.4 0.8], 'YTick', [4 10 20 30 40], 'FontSize', 10, 'PlotBoxAspectRatio', [1 1.1 1])
+        
+        % ------ plot Array 2 -------
+        Elec_mean_array2{gr,ses} = squeeze(nanmean(reshape(cell2mat(elec_day_array2(gr,:)),numel(freq.freq),length(freq.time),[]),3));% mean across electrodes
+        subplot(1,2,2), hold on
+        title(['Array Position:' Array_pos{2}])
+        H4 = mesh(Elec_mean_array2{gr,ses});
+        colormap('jet'), view([0 90]), axis('tight')
+        H4.XData = freq.time;
+        H4.YData = freq.freq;
+        line([0,0],[H4.YData(1),H4.YData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
+        text(-0.05, 30, 2, 'CueOn', 'Rotation', 90, 'FontSize', 14, 'Color', [1 1 1])
+        line([0.4,0.4],[H4.YData(1),H4.YData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
+        text(0.35, 30, 2, 'CueOff', 'Rotation', 90, 'FontSize', 14, 'Color', [1 1 1])
+        line([0.8,0.8],[H4.YData(1),H4.YData(end)],[2,2],'LineStyle',':','Color',[0,0,0],'LineWidth',2)
+        text(0.75, 30, 2, 'TargetOn', 'Rotation', 90, 'FontSize', 14, 'Color', [1 1 1])               
+        xlabel('Time(sec)'), ylabel('Frequency(Hz)')
+        caxis(colorScaleElecAve2)
+        set(gca, 'XTick', [0 0.4 0.8], 'YTick', [4 10 20 30 40], 'FontSize', 10, 'PlotBoxAspectRatio', [1 1.1 1])
+
+        % Save the figure on the hard drive
+        saveas(F,[save_plot_dir,all_bhv_folder_names{ses}(5:end-4) ' - '  groupingCriteria,' ' out{gr} ' -ElectrodeAveraged','.jpg'])
+        clear H3 H4 F
+        close all
+    end
+    clear colorScaleElecAve1 colorScaleElecAve2
  
     % save the power spectrum of current session (Array 1 and 2) separated by condition and electrode [condition * number of electrodes]    
     save([intermediate_save_dir all_bhv_folder_names{ses}(5:end-4)], 'elec_day_array1','elec_day_array2')
@@ -412,10 +420,10 @@ for gr = 1:numGroups
     set(gca, 'XTick', [0 0.4 0.8], 'YTick', [4 10 20 30 40], 'FontSize', 10, 'PlotBoxAspectRatio', [1 1.1 1])
     clear H
 
-%     saveas(F, [save_plot_dir 'Array ' Array_pos{1} ' - ',groupingCriteria ' ' out{gr} 'Session Average','.jpg'])
-%     saveas(F, [save_plot_dir 'Array ' Array_pos{1} ' - ',groupingCriteria ' ' out{gr} 'Session Average','.fig'])
+    saveas(F, [save_plot_dir 'Array ' Array_pos{1} ' - ',groupingCriteria ' ' out{gr} 'Session Average','.jpg'])
+    saveas(F, [save_plot_dir 'Array ' Array_pos{1} ' - ',groupingCriteria ' ' out{gr} 'Session Average','.fig'])
     clear F 
-%     close all
+    close all
 end
 
 
