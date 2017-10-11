@@ -61,7 +61,6 @@ else
     Ses_sum2 = zeros(47*3,1501*48); % for array2 (posterior)
 end
 
-ses_num = 0;
 for ses = 1:length(all_bhv_folder_names) 
     
     % read out all the file names for channels of this session
@@ -76,9 +75,6 @@ for ses = 1:length(all_bhv_folder_names)
     file_names = file_names(sortedIdx);
     clear a1 sortedIdx
     
-    
-    ses_num = ses_num+1;
-
     if strcmp(groupingCriteria,'All trials')
         elec_day_array1 = cell(1,96);
         elec_day_array2 = cell(1,96);
