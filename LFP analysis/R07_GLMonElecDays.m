@@ -300,7 +300,7 @@ for rw=1:numRows
         clear aa thisArrayElecs
     end
 end
-%%  Plot histogram of the significant GLM coefficients across electrodes and sessions
+%%  Plot histogram of the significant GLM coefficients across electrodes and sessions (using FDR)
 numRows = size(allFreqTimIdx,1);
 numClmn = 2;  % two arrays
 
@@ -354,4 +354,64 @@ for rw=1:numRows
         ylabel('normalized num. of samples')
     end
 end
+
+
+%%  Plot histogram of the significant GLM coefficients across electrodes and sessions (without using FDR)
+numRows = size(allFreqTimIdx,1);
+numClmn = 2;  % two arrays
+pThr = 0.05;
+
+figure('Name', [Monkey ', histogram of significant coefficients'])
+for rw = 1:numRows
+    for cl = 1:numClmn
+        subplot(numRows, numClmn, ((rw-1)*numRows)+cl), hold on, box on
+        title([Array_pos{cl}])
+        allSample2 = [];
+        allSample3 = [];
+        % extract electrodes of Array cl
+        thisArrayElecs = find(arrayIdx == cl);
+        % extract coefficients for selected channels and freq. band
+        aa = glmB(:,thisArrayElecs,rw);  
+        aa = aa(:)';
+        % extract statistics for selected channels and freq. band
+        sts = glmStats(:,thisArrayElecs,rw);   
+        sts = sts(:)';
+        % remove empty cells from the sts and aa
+        tmpIdx = cellfun(@(x) isempty(x), sts, 'UniformOutput', 0); 
+        sts(cell2mat(tmpIdx)) = [];
+        aa(cell2mat(tmpIdx)) = [];
+        clear tmpIdx
+        % get the p value from statistics structure for every sample
+        stsP = cellfun(@(x) getfield(x, 'p'), sts, 'UniformOutput', 0); 
+        clear sts
+        % find the p-value threshold for every sample
+        pvalThr = num2cell(pThr*ones(1,numel(stsP)));
+        % find which pvalues pass the threshold
+        paspval = cellfun(@(x,y) find(x<=y), stsP, pvalThr, 'UniformOutput', 0);
+        for i=1:length(paspval)
+            if (~isempty(paspval{i}) && ~isempty(find(paspval{i} == 2)))
+                allSample2 = [allSample2; aa{i}(2)];
+            end
+            if (~isempty(paspval{i}) && ~isempty(find(paspval{i} == 3)))
+                allSample3 = [allSample3; aa{i}(3)];
+            end
+        end
+        clear i aa passFDR fdrThr
+        binEdge = -0.5:0.05:0.5;
+        binCenter = mean([binEdge(1:end-1); binEdge(2:end)]);
+        binCountsEv = histcounts(allSample2, binEdge);
+        binCountsVar = histcounts(allSample3, binEdge);
+        % plot histogram for EV coefficients
+        bar(binCenter, binCountsEv, 'FaceColor', [153 153 255]/255);
+        text(0.1, max(binCountsEv)-1, ['\color[rgb]{' num2str([153 153 255]/255) '} expected value'])
+        text(0.1, max(binCountsEv)-3, ['\color[rgb]{' num2str([153 153 255]/255) '} num. of significants ' num2str(sum(binCountsEv)) '/' num2str(numel(stsP))])
+        % plot histogram for Variance coefficients
+        bar(binCenter, -binCountsVar, 'FaceColor', [255 153 153]/255);
+        text(0.1, -max(binCountsVar)+3, ['\color[rgb]{' num2str([255 153 153]/255) '} variance'])
+        text(0.1, -max(binCountsVar)+1, ['\color[rgb]{' num2str([255 153 153]/255) '} num. of significants ' num2str(sum(binCountsVar)) '/' num2str(numel(stsP))])        
+        xlabel('coefficient value')
+        ylabel('normalized num. of samples')
+    end
+end
+
 
