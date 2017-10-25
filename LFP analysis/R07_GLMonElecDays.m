@@ -1,5 +1,7 @@
 
-
+% last update 25.10.2017: this is checked if arrayIdx is changed during
+% each session. if there is any change, an error occures. so, it is
+% neccessary to redraw the results of Report 7.
 % This script loads LFP and event data from the Clean Data folder; groups trials based on 'expecter_reward & RewardVariance';  
 % For each electrode in each condition, determines in which trials the electrode had bad signal and has to be removed
 % from the analysis; it removes all electrodes from the analysis for trials with wierd (outlier!) event timing;
@@ -106,6 +108,8 @@ allSesMeanPower = cell(length(monkeyCleanData), 9, length(freqOfInt), length(tim
 glmB = cell(length(monkeyCleanData) ,96, 2);
 glmStats = cell(length(monkeyCleanData) ,96, 2);
 
+arrayIdx = nan(length(monkeyCleanData),num_ch);
+
 for ses = 1:length(monkeyCleanData) 
     % read out file names related to 96 channels of this session
     tmpIdx1 = strfind(monkeyCleanData{ses},'M');
@@ -127,9 +131,9 @@ for ses = 1:length(monkeyCleanData)
         switch freq.label{1}(1:4)
             case 'chan'
                 if ismember(ch, Array1)
-                    arrayIdx(ch) = 1;
+                    arrayIdx(ses,ch) = 1;
                 else if ismember(ch, Array2)
-                        arrayIdx(ch) = 2;
+                        arrayIdx(ses,ch) = 2;
                     else
                         display('There is an error! This channels belong to neither of the arrays!!!')
                         break
@@ -139,9 +143,9 @@ for ses = 1:length(monkeyCleanData)
             case 'elec'
                 k = strfind(freq.label{1},'-');
                 if ismember(str2num(freq.label{1}(k+1:end)), Array1)
-                    arrayIdx(ch) = 1;
+                    arrayIdx(ses,ch) = 1;
                 else if ismember(str2num(freq.label{1}(k+1:end)), Array2)
-                        arrayIdx(ch) = 2;
+                        arrayIdx(ses,ch) = 2;
                     else
                         udisplay('There is an error! This channels belong to neither of the arrays!!!')
                         break
@@ -245,6 +249,12 @@ for ses = 1:length(monkeyCleanData)
     
     clear sesChFileNames
 end
+
+%% display an error if the array index do not have the same indices in all the sessions
+if size(unique(arrayIdx,'rows'),1) >1
+    error('ERROR: channel indices are different across sessions')
+end
+
 %% save the workspace
 save([save_result_dir 'GLMonElecDays_workspace'])
 
@@ -259,7 +269,7 @@ for rw=1:numRows
         title([Array_pos{cl}])
         
         % extract electrodes of Array cl
-        thisArrayElecs = find(arrayIdx == cl);
+        thisArrayElecs = find(arrayIdx(1,:) == cl);
         aa = glmB(:,thisArrayElecs,rw);  % extract coefficients for selected channels and freq. band
         aa = aa(:)';
         aa = cell2mat(aa);
@@ -289,7 +299,7 @@ for rw=1:numRows
         title([Array_pos{cl}])
         
         % extract electrodes of Array cl
-        thisArrayElecs = find(arrayIdx == cl);
+        thisArrayElecs = find(arrayIdx(1,:) == cl);
         aa = glmB(:,thisArrayElecs,rw);  % extract coefficients for selected channels and freq. band
         aa = aa(:)';
         aa = cell2mat(aa);
@@ -312,7 +322,7 @@ for rw=1:numRows
         allSample2 = [];
         allSample3 = [];
         % extract electrodes of Array cl
-        thisArrayElecs = find(arrayIdx == cl);
+        thisArrayElecs = find(arrayIdx(1,:) == cl);
         % extract coefficients for selected channels and freq. band
         aa = glmB(:,thisArrayElecs,rw);  
         aa = aa(:)';
@@ -369,7 +379,7 @@ for rw = 1:numRows
         allSample2 = [];
         allSample3 = [];
         % extract electrodes of Array cl
-        thisArrayElecs = find(arrayIdx == cl);
+        thisArrayElecs = find(arrayIdx(1,:) == cl);
         % extract coefficients for selected channels and freq. band
         aa = glmB(:,thisArrayElecs,rw);  
         aa = aa(:)';
@@ -414,4 +424,75 @@ for rw = 1:numRows
     end
 end
 
+%%  Plot percentage histogram of the GLM coefficients across electrodes and sessions with significants
+numRows = size(allFreqTimIdx,1);
+numClmn = 2;  % two arrays
+pThr = 0.05;
 
+figure('Name', [Monkey ', histogram of all sample coefficients'])
+for rw=1:numRows
+    for cl = 1:numClmn
+        subplot(numRows, numClmn, ((rw-1)*numRows)+cl), hold on, box on
+        title([Array_pos{cl}])
+        allSample2 = [];
+        allSample3 = [];
+        % extract electrodes of Array cl
+        thisArrayElecs = find(arrayIdx(1,:) == cl);
+        aa = glmB(:,thisArrayElecs,rw);  % extract coefficients for selected channels and freq. band
+        aa = aa(:)';
+        bb = cell2mat(aa);
+        binEdge = -0.5:0.01:0.5;
+        binCenter = mean([binEdge(1:end-1); binEdge(2:end)]);
+        binCountsEv = histcounts(bb(2,:), binEdge);
+        binCountsVar = histcounts(bb(3,:), binEdge);
+        
+        % extract statistics for selected channels and freq. band
+        sts = glmStats(:,thisArrayElecs,rw);   
+        sts = sts(:)';
+        % remove empty cells from the sts and aa
+        tmpIdx = cellfun(@(x) isempty(x), sts, 'UniformOutput', 0); 
+        sts(cell2mat(tmpIdx)) = [];
+        aa(cell2mat(tmpIdx)) = [];
+        clear tmpIdx
+        % get the p value from statistics structure for every sample
+        stsP = cellfun(@(x) getfield(x, 'p'), sts, 'UniformOutput', 0); 
+        clear sts
+        % find the p-value threshold for every sample
+        pvalThr = num2cell(pThr*ones(1,numel(stsP)));
+        % find which pvalues pass the threshold
+        paspval = cellfun(@(x,y) find(x<=y), stsP, pvalThr, 'UniformOutput', 0);
+        for i=1:length(paspval)
+            if (~isempty(paspval{i}) && ~isempty(find(paspval{i} == 2)))
+                allSample2 = [allSample2; aa{i}(2)];
+            end
+            if (~isempty(paspval{i}) && ~isempty(find(paspval{i} == 3)))
+                allSample3 = [allSample3; aa{i}(3)];
+            end
+        end
+        clear i aa paspval pvalThr
+        
+        % plot histogram for EV coefficients
+        bar(binCenter, 100*binCountsEv/sum(binCountsEv), 'FaceColor', [153 153 255]/255);
+        text(0.1, 10, ['\color[rgb]{' num2str([153 153 255]/255) '} expected value'])
+        % plot histogram for Variance coefficients
+        bar(binCenter, -100*binCountsVar/sum(binCountsVar), 'FaceColor', [255 153 153]/255);
+        text(0.1, -10, ['\color[rgb]{' num2str([255 153 153]/255) '} variance '])
+        xlabel('coefficient value')
+        ylabel('percentage of samples')
+        xlim([-0.25,0.25]),ylim([-15,15])
+        
+        binCountsEv = histcounts(allSample2, binEdge);
+        binCountsVar = histcounts(allSample3, binEdge);
+        % plot histogram for EV coefficients
+        bar(binCenter, binCountsEv, 'FaceColor', [0 0 255]/255);
+%         text(0.1, max(binCountsEv)-1, ['\color[rgb]{' num2str([153 153 255]/255) '} expected value'])
+        text(0.1, max(binCountsEv)-3, ['\color[rgb]{' num2str([153 153 255]/255) '} percentage of significants ' num2str(100*sum(binCountsEv)/numel(stsP))])
+        % plot histogram for Variance coefficients
+        bar(binCenter, -binCountsVar, 'FaceColor', [255 0 0]/255);
+%         text(0.1, -max(binCountsVar)+3, ['\color[rgb]{' num2str([255 153 153]/255) '} variance'])
+        text(0.1, -max(binCountsVar)+1, ['\color[rgb]{' num2str([255 153 153]/255) '} percentage of significants ' num2str(100*sum(binCountsVar)/numel(stsP))])        
+%         xlabel('coefficient value')
+%         ylabel('normalized num. of samples')
+        line([0,0],[min(ylim),max(ylim)],'Color','k')
+    end
+end
