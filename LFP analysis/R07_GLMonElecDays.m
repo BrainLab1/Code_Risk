@@ -126,6 +126,10 @@ for ses = 1:length(monkeyCleanData)
     
     for ch = 1:length(sesChFileNames)
         
+        % load the electrode power spectrum if it has passed the above criterion; this will load the freq variable ... 
+        load([freq_data_dir sesChFileNames{ch}])
+        
+        
         % find which array this channel belongs to
         eval(['[Array1, Array2] = electrodepinout' Monkey '(freq.label{1}(1:4));']) 
         switch freq.label{1}(1:4)
@@ -158,9 +162,6 @@ for ses = 1:length(monkeyCleanData)
         if sum(elecCndNumGoodTrials(:,ch,ses) >= minElecRepPerCnd) ~= size(elecCndNumGoodTrials,1)
             continue
         end
-        
-        % load the electrode power spectrum if it has passed the above criterion; this will load the freq variable ... 
-        load([freq_data_dir sesChFileNames{ch}])
         
         % find indices for frequency and time of interest
         if ~exist('allFreqTimIdx','var')
