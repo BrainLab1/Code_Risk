@@ -1,7 +1,7 @@
 
 % this script applies GLM on LFP (in pre-defined frequency and time interval); applies GLM on the lick signal (in pre-defined
 % time intervals, could be more than one interval); applies GLM on Z(Log(RT)); then correlates GLM coefficients for EV and Var
-% for LFP-Lick and LFP-RT
+% for LFP-Lick and LFP-RT; both LFP and event-time outliers are removed
 
 clear
 clc
