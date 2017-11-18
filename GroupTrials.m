@@ -1,3 +1,4 @@
+% last update: 18.11.2017 by Saeed: new conditions for uncertainty task is added
 % last update: 17.09.2017 by Bahareh: new condition added for 'CuePos & TargetPos & CurrEV & CurrVar' 
 % last update: 16.09.2017 by Bahareh: new condition added for 'PreTrlVar & PreTrlOutcome & CurrTrlEV' 
 % last update: 04.09.2017 by Bahareh: new condition added for 'PreTrlEV & PreTrlOutcome & CurrTrlEV' 
@@ -678,6 +679,36 @@ switch grType
         end 
         clear gr
         
+    case 'CuePos & TargetPos & PreGood & CurrEV' 
+        % make a matrix with all possible combinations of these variables
+        allConditions = combvec([-1 1],[-1 1], [0,1] ,[0 0.25 0.5 0.75 1])';
+        output = [];
+        eventTable = struct2table(event);
+        for gr = 1:size(allConditions,1)
+            trlIdx = find((eventTable.cue_pos==allConditions(gr,1)) .* (eventTable.target_pos==allConditions(gr,2)) .* ...
+                          (eventTable.pre_good==allConditions(gr,3)) .* (eventTable.expected_reward==allConditions(gr,4)));
+            output = [output; struct('TrialIdx', trlIdx, ...
+                                     'Value', allConditions(gr,:), ...
+                                     'GroupingType', grType)];
+            clear trlIdx                                 
+        end 
+        clear gr
+      
+    
+    case 'CuePos & TargetPos & PreGood & CurrEV (uncertainty)' 
+        % make a matrix with all possible combinations of these variables
+        allConditions = combvec([-1 1],[-1 1], [0,1] ,[0 0.5 1])';
+        output = [];
+        eventTable = struct2table(event);
+        for gr = 1:size(allConditions,1)
+            trlIdx = find((eventTable.cue_pos==allConditions(gr,1)) .* (eventTable.target_pos==allConditions(gr,2)) .* ...
+                          (eventTable.pre_good==allConditions(gr,3)) .* (eventTable.expected_reward==allConditions(gr,4)));
+            output = [output; struct('TrialIdx', trlIdx, ...
+                                     'Value', allConditions(gr,:), ...
+                                     'GroupingType', grType)];
+            clear trlIdx                                 
+        end 
+        clear gr
 end
 
 return
