@@ -1,3 +1,4 @@
+% last update: 10.12.2017 by Bahareh: new condition added for uncertainty task 'CuePos & TargetPos & CurrEV & CurrVar & PreGood (uncertainty all conditions)' 
 % last update: 22.11.2017 by Bahareh: new condition added for uncertainty task 'CuePos & TargetPos & CurrEV & CurrVar & PreGood (uncertainty 6 conditions)' 
 % last update: 21.11.2017 by Bahareh: new condition added for uncertainty task 'CuePos & TargetPos & CurrEV & CurrVar (uncertainty 6 conditions)' 
 % last update: 20.11.2017 by Bahareh: new conditions for uncertainty task is added 'CuePos & TargetPos & PreGood & CurrVar (uncertainty)' 
@@ -754,6 +755,26 @@ switch grType
         output = [];
         eventTable = struct2table(event);
         rewardVariance = cellfun(@(x) (strcmp(x(1),'R')*0) + (strcmp(x(1:3),'C50')*0.25) + ((strcmp(x(1:3),'C25') || strcmp(x(1:3),'C75'))*0.1875), eventTable.type);
+        for gr = 1:size(allConditions,1)
+            trlIdx = find((eventTable.cue_pos==allConditions(gr,1)) .* (eventTable.target_pos==allConditions(gr,2)) .* ...
+                          (eventTable.expected_reward==allConditions(gr,3)) .* (rewardVariance==allConditions(gr,4)) .* (eventTable.pre_good==allConditions(gr,5)));
+            output = [output; struct('TrialIdx', trlIdx, ...
+                                     'Value', allConditions(gr,:), ...
+                                     'GroupingType', grType)];
+            clear trlIdx                                 
+        end 
+        clear gr
+
+
+    case 'CuePos & TargetPos & CurrEV & CurrVar & PreGood (uncertainty all conditions)' 
+        % make a matrix with all possible combinations of these variables
+        allConditions = combvec([-1 1],[-1 1], [0 0.25 0.5 0.75 1], [0 0.1875 0.25], [0 1])'; % variances were measured based on min_reward_value=0 and max_reward_value=1; 
+        output = [];
+        eventTable = struct2table(event);
+        rewardVariance = nan(size(eventTable,1), 1);
+        rewardVariance = cellfun( @(x) ((strcmp(x(1),'R') || strcmp(x(1:end-1),'C100') || strcmp(x(1:2),'C0')) * 0) + ...
+                                        (strcmp(x(1:3),'C50')*0.25) + ((strcmp(x(1:3),'C25') || strcmp(x(1:3),'C75'))*0.1875), ...
+                                         eventTable.type );
         for gr = 1:size(allConditions,1)
             trlIdx = find((eventTable.cue_pos==allConditions(gr,1)) .* (eventTable.target_pos==allConditions(gr,2)) .* ...
                           (eventTable.expected_reward==allConditions(gr,3)) .* (rewardVariance==allConditions(gr,4)) .* (eventTable.pre_good==allConditions(gr,5)));
