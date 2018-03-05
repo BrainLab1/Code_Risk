@@ -1,3 +1,4 @@
+% last update: 05.03.2018 by Bahareh: new condition added for uncertainty task 'CuePos & CurrEV & CurrVar' 
 % last update: 10.12.2017 by Bahareh: new condition added for uncertainty task 'CuePos & TargetPos & CurrEV & CurrVar & PreGood (uncertainty all conditions)' 
 % last update: 22.11.2017 by Bahareh: new condition added for uncertainty task 'CuePos & TargetPos & CurrEV & CurrVar & PreGood (uncertainty 6 conditions)' 
 % last update: 21.11.2017 by Bahareh: new condition added for uncertainty task 'CuePos & TargetPos & CurrEV & CurrVar (uncertainty 6 conditions)' 
@@ -676,6 +677,20 @@ switch grType
         for gr = 1:size(allConditions,1)
             trlIdx = find((eventTable.cue_pos==allConditions(gr,1)) .* (eventTable.target_pos==allConditions(gr,2)) .* ...
                           (eventTable.expected_reward==allConditions(gr,3)) .* (eventTable.RewardVariance==allConditions(gr,4)));
+            output = [output; struct('TrialIdx', trlIdx, ...
+                                     'Value', allConditions(gr,:), ...
+                                     'GroupingType', grType)];
+            clear trlIdx                                 
+        end 
+        clear gr
+        
+    case 'CuePos & CurrEV & CurrVar' 
+        % make a matrix with all posiible combinations of these variables
+        allConditions = combvec([-1 1],[3 6 9],[0 1 4])';
+        output = [];
+        eventTable = struct2table(event);
+        for gr = 1:size(allConditions,1)
+            trlIdx = find((eventTable.cue_pos==allConditions(gr,1)) .* (eventTable.expected_reward==allConditions(gr,2)) .* (eventTable.RewardVariance==allConditions(gr,3)));
             output = [output; struct('TrialIdx', trlIdx, ...
                                      'Value', allConditions(gr,:), ...
                                      'GroupingType', grType)];
