@@ -1,4 +1,4 @@
-% last update: 10.03.2018: a new condition was added for 'expected_reward'
+% last update: 10.03.2018: new condition was added for 'expected_reward'
 % last update: 05.03.2018 by Bahareh: new condition added for uncertainty task 'CuePos & CurrEV & CurrVar' 
 % last update: 10.12.2017 by Bahareh: new condition added for uncertainty task 'CuePos & TargetPos & CurrEV & CurrVar & PreGood (uncertainty all conditions)' 
 % last update: 22.11.2017 by Bahareh: new condition added for uncertainty task 'CuePos & TargetPos & CurrEV & CurrVar & PreGood (uncertainty 6 conditions)' 
@@ -50,8 +50,8 @@ switch grType
         possibleVals = unique(eventTable.expected_reward);
         output = [];
         for i=1:length(possibleVals)
-            output = [output; struct('TrialIdx', find(strcmp(eventTable.(grType), possibleVals{i})), ...
-                                     'Value', possibleVals{i}, ...
+            output = [output; struct('TrialIdx', find(eventTable.expected_reward, possibleVals(i)), ...
+                                     'Value', possibleVals(i), ...
                                      'GroupingType', 'expected_reward')];
         end
         
