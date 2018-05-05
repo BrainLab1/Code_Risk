@@ -10,21 +10,12 @@ dbstop if error
 
 spike_dir   = 'X:\data\Add PSTH to Aligned Spk\'; % 'Spike_PSTH_ValueTask\Spike_PSTH_CondCodeAdded_ValueTask\';
 
-Monkey = 'MacDuff';         % select among 'Mojo', 'MacDuff' 
+Monkey = 'Mojo';         % select among 'Mojo', 'MacDuff' 
 
 alignedEvent = '(cue)';     % select among 'cue', 'reward' and    
-groupingCriteria = 'CuePos & CurrEV & CurrVar';  % see all possible conditions under GroupTrials()
-timeInterval = [0.2,0.8];
-minRepetitionPerCondition = 5;
-ZScoreEachTuningCurve = 1;
-
-color_code = hsv(9);   % ***** use specific color for each task condition; 36 colors
-
-ApplyGLMonPopulation = 0;
-ApplyGLMonIndividualUnits = 1 ;
-
-StabilityCheckTimeInterval = [-0.5 1];
-AveSpkCountThreshold = 5;
+groupingCriteria = 'expecter_reward & RewardVariance';  % see all possible conditions under GroupTrials()
+timeInterval = [0,0.8];
+minRepetitionPerCondition = -5;
 
 %% read out list of all the available sesions
 allSessions = dir(spike_dir);
@@ -120,7 +111,7 @@ while idx <= length(allSessions)
     end
     clear un
     
-    save(['X:\Report 13\Spike Counts\' alignedEvent(2:end-1) '[' num2str(timeInterval(1)) ',' num2str(timeInterval(2)) ']_' ...
+    save(['X:\Test\Spike Counts\' alignedEvent(2:end-1) '[' num2str(timeInterval(1)) ',' num2str(timeInterval(2)) ']_' ...
            groupingCriteria '_minRepetition' num2str(minRepetitionPerCondition) '\' allSessions(idx).name], 'spkDataArr1', 'spkDataArr2')
     clear spkDataArr* decision unitNames*
     idx = idx+1;
